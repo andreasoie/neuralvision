@@ -1,4 +1,4 @@
-# :computer: neural-vision
+# :computer: neuralvision
 ---
 In my final project of [TDT4265](https://www.ntnu.edu/studies/courses/TDT4265#tab=omEmnet), my goal is to detect objects in traffic from LIDAR images collected around the NTNU campus. The sample image below is an example of how the dataset looks like.
 
