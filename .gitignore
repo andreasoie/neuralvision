@@ -127,3 +127,7 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+project/SSD/scripts/data/tdt4265_2022/
+
+project/SSD/scripts/datasets/tdt4265/
