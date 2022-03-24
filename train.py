@@ -12,11 +12,14 @@ import tqdm
 from omegaconf import OmegaConf
 from torch.optim.lr_scheduler import ChainedScheduler
 
-from neuralvision import tops
-from neuralvision.sdd import utils
-from ssd.evaluate import evaluate
-from tops import checkpointer, logger
-from tops.config import instantiate
+from neuralvision.tops.logger import logger
+from neuralvision.tops import build
+from neuralvision.tops import torch_utils
+from neuralvision.tops.misc import print_module_summary
+from neuralvision.tops.config.instantiate import instantiate
+from neuralvision.tops.checkpointer import checkpointer
+from neuralvision.helpers import load_config, tencent_trick
+from neuralvision.evaluate import evaluate
 
 torch.backends.cudnn.benchmark = True
 
@@ -32,11 +35,11 @@ def train_epoch(
 ):
     grad_scale = scaler.get_scale()
     for batch in tqdm.tqdm(dataloader_train, f"Epoch {logger.epoch()}"):
-        batch = tops.to_cuda(batch)
+        batch = torch_utils.to_cuda(batch)
         batch["labels"] = batch["labels"].long()
         batch = gpu_transform(batch)
 
-        with torch.cuda.amp.autocast(enabled=tops.AMP()):
+        with torch.cuda.amp.autocast(enabled=torch_utils.AMP()):
             bbox_delta, confs = model(batch["image"])
             loss, to_log = model.loss_func(
                 bbox_delta, confs, batch["boxes"], batch["labels"]
@@ -83,19 +86,18 @@ def print_config(cfg):
     help="Only run evaluation, no training.",
 )
 def train(config_path: Path, evaluate_only: bool):
-    logger.logger.DEFAULT_SCALAR_LEVEL = logger.logger.DEBUG
-    print("CONFIG PATH (?): ", config_path)
-    cfg = utils.load_config(config_path)
+    logger.DEFAULT_SCALAR_LEVEL = logger.DEBUG
+    cfg = load_config(config_path)
     print_config(cfg)
 
-    tops.init(cfg.output_dir)
-    tops.set_AMP(cfg.train.amp)
-    tops.set_seed(cfg.train.seed)
+    build.init(cfg.output_dir)
+    torch_utils.set_AMP(cfg.train.amp)
+    torch_utils.set_seed(cfg.train.seed)
     dataloader_train = instantiate(cfg.data_train.dataloader)
     dataloader_val = instantiate(cfg.data_val.dataloader)
     cocoGt = dataloader_val.dataset.get_annotations_as_coco()
-    model = tops.to_cuda(instantiate(cfg.model))
-    optimizer = instantiate(cfg.optimizer, params=utils.tencent_trick(model))
+    model = torch_utils.to_cuda(instantiate(cfg.model))
+    optimizer = instantiate(cfg.optimizer, params=tencent_trick(model))
     scheduler = ChainedScheduler(
         instantiate(list(cfg.schedulers.values()), optimizer=optimizer)
     )
@@ -124,11 +126,11 @@ def train(config_path: Path, evaluate_only: bool):
     if evaluate_only:
         evaluation_fn()
         exit()
-    scaler = torch.cuda.amp.GradScaler(enabled=tops.AMP())
-    dummy_input = tops.to_cuda(
+    scaler = torch.cuda.amp.GradScaler(enabled=torch_utils.AMP())
+    dummy_input = torch_utils.to_cuda(
         torch.randn(1, cfg.train.image_channels, *cfg.train.imshape)
     )
-    tops.print_module_summary(model, (dummy_input,))
+    print_module_summary(model, (dummy_input,))
     start_epoch = logger.epoch()
     for epoch in range(start_epoch, cfg.train.epochs):
         start_epoch_time = time.time()
@@ -147,7 +149,7 @@ def train(config_path: Path, evaluate_only: bool):
 
         eval_stats = evaluation_fn()
         eval_stats = {f"metrics/{key}": val for key, val in eval_stats.items()}
-        logger.add_dict(eval_stats, level=logger.logger.INFO)
+        logger.add_dict(eval_stats, level=logger.INFO)
         train_state = dict(total_time=total_time)
         checkpointer.save_registered_models(train_state)
         logger.step_epoch()

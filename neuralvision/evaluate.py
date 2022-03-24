@@ -1,13 +1,15 @@
+import os
+import sys
+
+import numpy as np
 import torch
 import tqdm
-import numpy as np
-import tops
-from pycocotools.cocoeval import COCOeval
 from pycocotools.coco import COCO
-from ssd import utils
-from tops import logger
-import sys
-import os
+from pycocotools.cocoeval import COCOeval
+
+from neuralvision import helpers
+from neuralvision.tops import torch_utils
+from neuralvision.tops.logger import logger
 
 
 def silent_evaluation(eval_object):
@@ -68,9 +70,9 @@ def evaluate(
     model.eval()
     ret = []
     for batch in tqdm.tqdm(dataloader, desc="Evaluating on dataset"):
-        batch["image"] = tops.to_cuda(batch["image"])
+        batch["image"] = torch_utils.to_cuda(batch["image"])
         batch = gpu_transform(batch)
-        with torch.cuda.amp.autocast(enabled=tops.AMP()):
+        with torch.cuda.amp.autocast(enabled=torch_utils.AMP()):
             predictions = model(
                 batch["image"],
                 nms_iou_threshold=0.50,
@@ -82,7 +84,7 @@ def evaluate(
             boxes_ltrb, categories, scores = predictions[idx]
             # ease-of-use for specific predictions
             H, W = batch["height"][idx], batch["width"][idx]
-            box_ltwh = utils.bbox_ltrb_to_ltwh(boxes_ltrb)
+            box_ltwh = helpers.bbox_ltrb_to_ltwh(boxes_ltrb)
             box_ltwh[:, [0, 2]] *= W
             box_ltwh[:, [1, 3]] *= H
             box_ltwh, category, score = [

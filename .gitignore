@@ -175,3 +175,13 @@ datasets/mnist_object_detection/val/images/
 neuralvision/data/mnist_object_detection/val/images/
 
 neuralvision/outputs/ssd300/logs/
+
+*.gz
+
+*.pkl
+
+outputs/configs/ssd300/logs/tensorboard/
+
+*.patch
+
+outputs/configs/ssd300/logs/

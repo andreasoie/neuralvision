@@ -4,7 +4,8 @@ import typing
 import cv2
 import numpy as np
 import tqdm
-import mnist
+
+from datasets.utils.mnist import load_download_extract_mnist
 
 
 def read_labels(label_path: pathlib.Path) -> typing.Tuple[np.ndarray]:
@@ -109,7 +110,7 @@ def load_dataset(
 ):
     print(f"load_dataset() : {dirpath}")
     num_images = 10000 if is_train else 1000
-    X_train, Y_train, X_test, Y_test = mnist.load()
+    X_train, Y_train, X_test, Y_test = load_download_extract_mnist()
     X, Y = X_train, Y_train
     if not is_train:
         X, Y = X_test, Y_test

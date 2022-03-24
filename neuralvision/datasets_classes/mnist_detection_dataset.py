@@ -4,7 +4,7 @@ import torch
 
 from datasets.utils.mnist_object_detection import load_dataset
 from pycocotools.coco import COCO
-from ssd import utils
+from neuralvision import helpers
 
 
 class MNISTDetectionDataset(torch.utils.data.Dataset):
@@ -63,7 +63,7 @@ class MNISTDetectionDataset(torch.utils.data.Dataset):
         for idx in range(len(self)):
             image_id = idx
             boxes_ltrb = self.boxes_ltrb[idx]
-            boxes_ltwh = utils.bbox_ltrb_to_ltwh(boxes_ltrb)
+            boxes_ltwh = helpers.bbox_ltrb_to_ltwh(boxes_ltrb)
             coco_anns["images"].append({"id": image_id, "height": 300, "width": 300})
             for box, label in zip(boxes_ltwh, self.labels[idx]):
                 box = box.tolist()

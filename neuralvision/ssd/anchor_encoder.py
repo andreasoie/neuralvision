@@ -1,10 +1,11 @@
 # Modified from:
 # https://github.com/NVIDIA/DeepLearningExamples/tree/master/PyTorch/Detection/SSD/
-import torch
-import tops
-import torch.nn.functional as F
-from ssd import utils
 from typing import Optional
+
+import torch
+import torch.nn.functional as F
+from neuralvision import helpers
+from neuralvision.tops import torch_utils
 
 
 def calc_iou_tensor(box1_ltrb, box2_ltrb):
@@ -47,7 +48,7 @@ class AnchorEncoder(object):
 
     def __init__(self, anchors):
         self.anchors = anchors(order="ltrb")
-        self.anchors_xywh = tops.to_cuda(anchors(order="xywh").unsqueeze(dim=0))
+        self.anchors_xywh = torch_utils.to_cuda(anchors(order="xywh").unsqueeze(dim=0))
         self.nboxes = self.anchors.size(0)
         self.scale_xy = anchors.scale_xy
         self.scale_wh = anchors.scale_wh
@@ -86,7 +87,7 @@ class AnchorEncoder(object):
         bboxes_out = self.anchors.clone()
         bboxes_out[masks, :] = bboxes_in[best_target_per_anchor_idx[masks], :]
         # Transform format to xywh format
-        bboxes_out = utils.bbox_ltrb_to_center(bboxes_out)
+        bboxes_out = helpers.bbox_ltrb_to_center(bboxes_out)
         return bboxes_out, labels_out
 
     def decode_output(self, bbox_delta: torch.Tensor, confs_in: Optional[torch.Tensor]):
@@ -106,7 +107,7 @@ class AnchorEncoder(object):
         )
         bbox_delta[:, :, 2:] = bbox_delta[:, :, 2:].exp() * self.anchors_xywh[:, :, 2:]
 
-        boxes_ltrb = utils.bbox_center_to_ltrb(bbox_delta)
+        boxes_ltrb = helpers.bbox_center_to_ltrb(bbox_delta)
         if confs_in is not None:
             confs_in = confs_in.permute(0, 2, 1)
             confs_in = F.softmax(confs_in, dim=-1)

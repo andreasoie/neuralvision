@@ -1,17 +1,19 @@
 import torch
 import torchvision
-
-from ssd.utils import batch_collate, batch_collate_val
-from ssd.data.mnist_detection_dataset import MNISTDetectionDataset
-from ssd.data.transforms import GroundTruthBoxesToAnchors, Normalize, ToTensor
-from ssd.modeling import SSD300, AnchorBoxes, SSDMultiboxLoss, backbones
-from tops.config import LazyCall as L
+from neuralvision.backbones.basic import BasicModel
+from neuralvision.configs.dir_utils import get_dataset_dir, get_output_dir
+from neuralvision.datasets_classes.mnist_detection_dataset import MNISTDetectionDataset
+from neuralvision.helpers import batch_collate, batch_collate_val
+from neuralvision.ssd.anchor_boxes import AnchorBoxes
+from neuralvision.ssd.ssd import SSD300
+from neuralvision.ssd.ssd_multibox_loss import SSDMultiboxLoss
+from neuralvision.tops.config.lazy import LazyCall as L
+from neuralvision.transforms.gpu_transforms import Normalize
+from neuralvision.transforms.target_transform import GroundTruthBoxesToAnchors
+from neuralvision.transforms.transform import ToTensor
 from torch.optim.lr_scheduler import LinearLR, MultiStepLR
 
-from dev.configs.dir_utils import get_dataset_dir, get_output_dir
-
-# DATASETS_DIR = "../datasets/"
-DATASETS_DIR = ""
+DATASETS_DIR = "../datasets/"
 
 train = dict(
     batch_size=32,
@@ -49,7 +51,7 @@ anchors = L(AnchorBoxes)(
     scale_size_variance=0.2,
 )
 
-backbone = L(backbones.BasicModel)(
+backbone = L(BasicModel)(
     output_channels=[128, 256, 128, 128, 64, 64],
     image_channels="${train.image_channels}",
     output_feature_sizes="${anchors.feature_sizes}",

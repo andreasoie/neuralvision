@@ -3,9 +3,12 @@ import torch
 import numpy as np
 import random
 
+
 class ToTensor:
     def __call__(self, sample):
-        sample["image"] = torch.from_numpy(np.rollaxis(sample["image"], 2, 0)).float() / 255
+        sample["image"] = (
+            torch.from_numpy(np.rollaxis(sample["image"], 2, 0)).float() / 255
+        )
         if "boxes" in sample:
             sample["boxes"] = torch.from_numpy(sample["boxes"])
             sample["labels"] = torch.from_numpy(sample["labels"])
@@ -26,15 +29,12 @@ def jaccard_numpy(box_a, box_b):
         A ∩ B / A ∪ B = A ∩ B / (area(A) + area(B) - A ∩ B)
     Args:
         box_a: Multiple bounding boxes, Shape: [num_boxes,4]
-        box_b: Single bounding box, Shape: [4]
     Return:
         jaccard overlap: Shape: [box_a.shape[0], box_a.shape[1]]
     """
     inter = intersect(box_a, box_b)
-    area_a = ((box_a[:, 2] - box_a[:, 0]) *
-              (box_a[:, 3] - box_a[:, 1]))  # [A,B]
-    area_b = ((box_b[2] - box_b[0]) *
-              (box_b[3] - box_b[1]))  # [A,B]
+    area_a = (box_a[:, 2] - box_a[:, 0]) * (box_a[:, 3] - box_a[:, 1])  # [A,B]
+    area_b = (box_b[2] - box_b[0]) * (box_b[3] - box_b[1])  # [A,B]
     union = area_a + area_b - inter
     return inter / union  # [A,B]
 
@@ -88,9 +88,9 @@ class RandomSampleCrop(torch.nn.Module):
 
             min_iou, max_iou = mode
             if min_iou is None:
-                min_iou = float('-inf')
+                min_iou = float("-inf")
             if max_iou is None:
-                max_iou = float('inf')
+                max_iou = float("inf")
 
             # max trails (50)
             for _ in range(50):
@@ -100,7 +100,9 @@ class RandomSampleCrop(torch.nn.Module):
                 h = np.random.uniform(0.3 * height, height)
 
                 # aspect ratio constraint b/t .5 & 2
-                if h / w < (original_aspect_ratio / 2) or h / w > (original_aspect_ratio * 2):
+                if h / w < (original_aspect_ratio / 2) or h / w > (
+                    original_aspect_ratio * 2
+                ):
                     continue
 
                 left = np.random.uniform(width - w)
@@ -117,7 +119,7 @@ class RandomSampleCrop(torch.nn.Module):
                     continue
 
                 # cut the crop from the image
-                current_image = current_image[rect[1]:rect[3], rect[0]:rect[2], :]
+                current_image = current_image[rect[1] : rect[3], rect[0] : rect[2], :]
 
                 # keep overlap with gt box IF center in sampled patch
                 centers = (boxes[:, :2] + boxes[:, 2:]) / 2.0
@@ -142,13 +144,11 @@ class RandomSampleCrop(torch.nn.Module):
                 current_labels = labels[mask]
 
                 # should we use the box left and top corner or the crop's
-                current_boxes[:, :2] = np.maximum(current_boxes[:, :2],
-                                                    rect[:2])
+                current_boxes[:, :2] = np.maximum(current_boxes[:, :2], rect[:2])
                 # adjust to crop (by substracting crop's left,top)
                 current_boxes[:, :2] -= rect[:2]
 
-                current_boxes[:, 2:] = np.minimum(current_boxes[:, 2:],
-                                                    rect[2:])
+                current_boxes[:, 2:] = np.minimum(current_boxes[:, 2:], rect[2:])
                 # adjust to crop (by substracting crop's left,top)
                 current_boxes[:, 2:] -= rect[:2]
                 current_boxes[:, [0, 2]] /= w
@@ -161,7 +161,6 @@ class RandomSampleCrop(torch.nn.Module):
 
 
 class RandomHorizontalFlip(torch.nn.Module):
-
     def __init__(self, p=0.5) -> None:
         super().__init__()
         self.p = p
@@ -177,12 +176,13 @@ class RandomHorizontalFlip(torch.nn.Module):
 
 
 class Resize(torch.nn.Module):
-
     def __init__(self, imshape) -> None:
         super().__init__()
         self.imshape = tuple(imshape)
 
     @torch.no_grad()
     def forward(self, batch):
-        batch["image"] = torchvision.transforms.functional.resize(batch["image"], self.imshape, antialias=True)
+        batch["image"] = torchvision.transforms.functional.resize(
+            batch["image"], self.imshape, antialias=True
+        )
         return batch
