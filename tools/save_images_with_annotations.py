@@ -1,11 +1,12 @@
-import cv2
 import os
-import numpy as np
 
-from tops.config import instantiate, LazyConfig
-from vizer.draw import draw_boxes
-from ssd import utils
+import cv2
+import numpy as np
+from neuralvision.helpers import batch_collate
+from neuralvision.tops.config.instantiate import instantiate
+from neuralvision.tops.config.lazy import LazyConfig
 from tqdm import tqdm
+from vizer.draw import draw_boxes
 
 
 def get_config(config_path):
@@ -19,10 +20,12 @@ def get_config(config_path):
 def get_dataloader(cfg, dataset_to_visualize):
     if dataset_to_visualize == "train":
         # Remove GroundTruthBoxesToAnchors transform
-        cfg.data_train.dataset.transform.transforms = cfg.data_train.dataset.transform.transforms[:-1]
+        cfg.data_train.dataset.transform.transforms = (
+            cfg.data_train.dataset.transform.transforms[:-1]
+        )
         data_loader = instantiate(cfg.data_train.dataloader)
     else:
-        cfg.data_val.dataloader.collate_fn = utils.batch_collate
+        cfg.data_val.dataloader.collate_fn = batch_collate
         data_loader = instantiate(cfg.data_val.dataloader)
 
     return data_loader
@@ -44,7 +47,9 @@ def convert_image_to_hwc_byte(image):
 
 def visualize_boxes_on_image(batch, label_map):
     image = convert_image_to_hwc_byte(batch["image"])
-    boxes = convert_boxes_coords_to_pixel_coords(batch["boxes"], batch["width"], batch["height"])
+    boxes = convert_boxes_coords_to_pixel_coords(
+        batch["boxes"], batch["width"], batch["height"]
+    )
     labels = batch["labels"][0].cpu().numpy().tolist()
 
     image_with_boxes = draw_boxes(image, boxes, labels, class_name_map=label_map)
@@ -57,10 +62,13 @@ def create_viz_image(batch, label_map):
 
     # We concatinate in the height axis, so that the images are placed on top of
     # each other
-    concatinated_image = np.concatenate([
-        image_without_annotations,
-        image_with_annotations,
-    ], axis=0)
+    concatinated_image = np.concatenate(
+        [
+            image_without_annotations,
+            image_with_annotations,
+        ],
+        axis=0,
+    )
     return concatinated_image
 
 
@@ -96,5 +104,5 @@ def main():
     save_images_with_annotations(dataloader, cfg, save_folder, num_images_to_visualize)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

@@ -1,9 +1,10 @@
-from dev.tops.config import instantiate, LazyConfig
-from dev.ssd import utils
+from neuralvision import helpers
+from neuralvision.tops.config.instantiate import instantiate
+from neuralvision.tops.config.lazy import LazyConfig
 from tqdm import tqdm
 
 
-def get_config(config_path):
+def get_config(config_path: str):
     cfg = LazyConfig.load(config_path)
     cfg.train.batch_size = 1
     return cfg
@@ -17,7 +18,7 @@ def get_dataloader(cfg, dataset_to_visualize):
         )
         data_loader = instantiate(cfg.data_train.dataloader)
     else:
-        cfg.data_val.dataloader.collate_fn = utils.batch_collate
+        cfg.data_val.dataloader.collate_fn = helpers.batch_collate
         data_loader = instantiate(cfg.data_val.dataloader)
 
     return data_loader

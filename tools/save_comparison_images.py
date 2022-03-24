@@ -5,15 +5,16 @@ import numpy as np
 from tqdm import tqdm
 
 from vizer.draw import draw_boxes
-from dev.tops import get_device, to_cuda
-from dev.tops.checkpointer import load_checkpoint
-from dev.ssd import utils
-from dev.tops.config import instantiate, LazyCall as L
-from dev.ssd.data.transforms import ToTensor
+from neuralvision.tops.torch_utils import get_device, to_cuda
+from neuralvision.tops.checkpointer.checkpointer import load_checkpoint
+from neuralvision.helpers import load_config, batch_collate
+from neuralvision.tops.config.instantiate import instantiate
+from neuralvision.tops.config.lazy import LazyConfig as L
+from neuralvision.transforms.transform import ToTensor
 
 
 def get_config(config_path):
-    cfg = utils.load_config(config_path)
+    cfg = load_config(config_path)
     cfg.train.batch_size = 1
     cfg.data_train.dataloader.shuffle = False
     cfg.data_val.dataloader.shuffle = False
@@ -38,7 +39,7 @@ def get_dataloader(cfg, dataset_to_visualize):
         data_loader = instantiate(cfg.data_train.dataloader)
     else:
         cfg.data_val.dataset.transform.transforms = to_tensor_transform
-        cfg.data_val.dataloader.collate_fn = utils.batch_collate
+        cfg.data_val.dataloader.collate_fn = batch_collate
         data_loader = instantiate(cfg.data_val.dataloader)
 
     return data_loader

@@ -1,10 +1,12 @@
+import time
+from pathlib import Path
+
 import click
 import numpy as np
-import time
 import torch
-from dev.tops.config import instantiate, LazyConfig
-from dev.tops import to_cuda
-from pathlib import Path
+from neuralvision.tops.config.instantiate import instantiate
+from neuralvision.tops.config.lazy import LazyConfig
+from neuralvision.tops.torch_utils import to_cuda
 
 np.random.seed(0)
 

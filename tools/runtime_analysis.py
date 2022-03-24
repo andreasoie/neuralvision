@@ -1,12 +1,13 @@
-from pathlib import Path
 import time
+from pathlib import Path
+
 import click
 import torch
 
-from dev.tops import get_device, to_cuda
-from dev.tops.checkpointer import load_checkpoint
-from dev.tops.utils import load_config
-from dev.tops.config import instantiate
+from neuralvision.tops.torch_utils import get_device, to_cuda
+from neuralvision.tops.checkpointer.checkpointer import load_checkpoint
+from neuralvision.tops.config.instantiate import instantiate
+from neuralvision.helpers import load_config
 
 
 @torch.no_grad()

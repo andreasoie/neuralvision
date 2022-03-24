@@ -1,12 +1,13 @@
+import json
 import pathlib
 import click
-import tqdm
 import torch
-import json
-import tops
-from tops.config import instantiate
-from tops.checkpointer import load_checkpoint
-from ssd.utils import load_config, bbox_ltrb_to_ltwh
+import tqdm
+
+from neuralvision.helpers import bbox_ltrb_to_ltwh, load_config
+from neuralvision.tops.checkpointer.checkpointer import load_checkpoint
+from neuralvision.tops.config.instantiate import instantiate
+from neuralvision.tops.torch_utils import AMP, get_device, to_cuda
 
 
 @torch.no_grad()
@@ -18,18 +19,18 @@ def get_detections(config_path, save_path):
     model = instantiate(cfg.model)
     model.eval()
     ckpt = load_checkpoint(
-        cfg.output_dir.joinpath("checkpoints"), map_location=tops.get_device()
+        cfg.output_dir.joinpath("checkpoints"), map_location=get_device()
     )
     model.load_state_dict(ckpt["model"])
-    model = tops.to_cuda(model)
+    model = to_cuda(model)
     data_val = instantiate(cfg.data_val.dataloader)
     gpu_transform = instantiate(cfg.data_val.gpu_transform)
     detections = []
 
     for batch in tqdm.tqdm(data_val, desc="Evaluating on dataset"):
-        batch["image"] = tops.to_cuda(batch["image"])
+        batch["image"] = to_cuda(batch["image"])
         batch = gpu_transform(batch)
-        with torch.cuda.amp.autocast(enabled=tops.AMP()):
+        with torch.cuda.amp.autocast(enabled=AMP()):
             # You can change the nms IOU threshold!
             predictions = model(
                 batch["image"],
@@ -62,12 +63,11 @@ def get_detections(config_path, save_path):
     save_path.parent.mkdir(exist_ok=True, parents=True)
     with open(save_path, "w") as fp:
         json.dump(detections, fp)
-    print("Detections saved to:", save_path)
-    print("Abolsute path:", save_path.absolute())
-    print(
-        "Go to: https://tdt4265-annotering.idi.ntnu.no/submissions/ \
-        to submit your result"
-    )
+
+    print("Detections saved to: ", save_path)
+    print("Absolute path: ", save_path.absolute())
+    URL_SUBISSIONS = "https://tdt4265-annotering.idi.ntnu.no/submissions/"
+    print(f"Go to: {URL_SUBISSIONS} to submit your result")
 
 
 if __name__ == "__main__":
