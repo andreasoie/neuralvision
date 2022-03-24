@@ -22,7 +22,7 @@ In my final project of [TDT4265](https://www.ntnu.edu/studies/courses/TDT4265#ta
 
 - [ ] Part 1. Dataset Exploration (9 points)
   - [ ] Task 1.1 (6 points) - Getting to know your dataset
-  - [ ] Task 1.2 (3 points) - Annotating Data
+  - [x] Task 1.2 (3 points) - Annotating Data
 - [ ] Part 2. Model Creation (23 points)
   - [ ] Task 2.1. (2 points) - Creating your first baseline
   - [ ] Task 2.2 (3 points) - Augmenting the Data
