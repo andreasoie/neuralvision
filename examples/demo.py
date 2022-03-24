@@ -41,7 +41,7 @@ def run_demo(
     cpu_transform = instantiate(cfg.data_val.dataset.transform)
     gpu_transform = instantiate(cfg.data_val.gpu_transform)
 
-    for i, image_path in enumerate(tqdm.tqdm(image_paths, desc="Predicting on images")):
+    for image_path in tqdm.tqdm(image_paths, desc="Predicting on images"):
         image_name = image_path.stem
         orig_img = np.array(Image.open(image_path).convert("RGB"))
         height, width = orig_img.shape[:2]
