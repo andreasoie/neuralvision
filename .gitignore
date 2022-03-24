@@ -143,3 +143,13 @@ datasets/tdt4265/val/
 datasets/tdt4265/images/train/
 
 datasets/tdt4265/images/val/
+
+datasets/mnist_detection/test/images/
+
+datasets/mnist_detection/test/labels/
+
+datasets/mnist_detection/train/images/
+
+datasets/mnist_detection/train/labels/
+
+datasets/utils/data/original_mnist/

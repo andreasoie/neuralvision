@@ -1,7 +1,8 @@
-from importlib.resources import path
 import pathlib
-import requests
 import zipfile
+from importlib.resources import path
+
+import requests
 import tqdm
 
 
