@@ -139,3 +139,7 @@ datasets/tdt4265_2022/images/val/
 datasets/tdt4265/train/
 
 datasets/tdt4265/val/
+
+datasets/tdt4265/images/train/
+
+datasets/tdt4265/images/val/
