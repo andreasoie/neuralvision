@@ -1,3 +1,5 @@
+git+https://github.com/NVIDIA/cocoapi.git@v0.6.0#subdirectory=PythonAPI
+
 click
 cloudpickle
 tqdm
@@ -7,9 +9,8 @@ Cython>=0.28.
 scikit-image
 ujson
 pybind11
-pycocotools==2.0.0
+#pycocotools==2.0.0
 easydict
 omegaconf
 vizer
 
-git+https://github.com/NVIDIA/cocoapi.git@v0.6.0#subdirectory=PythonAPI
