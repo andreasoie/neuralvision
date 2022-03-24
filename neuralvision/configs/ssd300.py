@@ -1,3 +1,5 @@
+import os
+
 import torch
 import torchvision
 from neuralvision.backbones.basic import BasicModel
@@ -13,7 +15,7 @@ from neuralvision.transforms.target_transform import GroundTruthBoxesToAnchors
 from neuralvision.transforms.transform import ToTensor
 from torch.optim.lr_scheduler import LinearLR, MultiStepLR
 
-DATASETS_DIR = "../datasets/"
+MNIST_OD_DATASET = "datasets/mnist_object_detection"
 
 train = dict(
     batch_size=32,
@@ -79,7 +81,7 @@ schedulers = dict(
 
 data_train = dict(
     dataset=L(MNISTDetectionDataset)(
-        data_dir=get_dataset_dir(DATASETS_DIR + "mnist_object_detection/train"),
+        data_dir=get_dataset_dir(f"{MNIST_OD_DATASET}/train"),
         is_train=True,
         transform=L(torchvision.transforms.Compose)(
             transforms=[
@@ -111,7 +113,7 @@ data_train = dict(
 )
 data_val = dict(
     dataset=L(MNISTDetectionDataset)(
-        data_dir=get_dataset_dir(DATASETS_DIR + "mnist_object_detection/val"),
+        data_dir=get_dataset_dir(f"{MNIST_OD_DATASET}/val"),
         is_train=False,
         transform=L(torchvision.transforms.Compose)(transforms=[L(ToTensor)()]),
     ),

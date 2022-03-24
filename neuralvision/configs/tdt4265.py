@@ -1,21 +1,17 @@
 # Inherit configs from the default ssd300
+import os
 import torchvision
-from ssd.data import TDT4265Dataset
-from ssd.data.transforms import GroundTruthBoxesToAnchors, Normalize, Resize, ToTensor
-from tops.config import LazyCall as L
 
-from .ssd300 import (
-    anchors,
-    backbone,
-    data_train,
-    data_val,
-    loss_objective,
-    model,
-    optimizer,
-    schedulers,
-    train,
-)
+from neuralvision.datasets_classes.tdt4265_dataset import TDT4265Dataset
+from neuralvision.tops.config.lazy import LazyConfig as L
+from neuralvision.transforms.gpu_transforms import Normalize
+from neuralvision.transforms.target_transform import GroundTruthBoxesToAnchors
+from neuralvision.transforms.transform import Resize, ToTensor
+
 from dir_utils import get_dataset_dir
+from ssd300 import data_train, data_val, model, train
+
+TDT4265_DATASET_DIR = "datasets/tdt4265"
 
 # Keep the model, except change the backbone and number of classes
 train.imshape = (128, 1024)
@@ -42,14 +38,14 @@ gpu_transform = L(torchvision.transforms.Compose)(
     ]
 )
 data_train.dataset = L(TDT4265Dataset)(
-    img_folder=get_dataset_dir("tdt4265_2022"),
+    img_folder=get_dataset_dir(TDT4265_DATASET_DIR),
     transform="${train_cpu_transform}",
-    annotation_file=get_dataset_dir("tdt4265_2022/train_annotations.json"),
+    annotation_file=get_dataset_dir(f"{TDT4265_DATASET_DIR}/train_annotations.json"),
 )
 data_val.dataset = L(TDT4265Dataset)(
-    img_folder=get_dataset_dir("tdt4265_2022"),
+    img_folder=get_dataset_dir(TDT4265_DATASET_DIR),
     transform="${val_cpu_transform}",
-    annotation_file=get_dataset_dir("tdt4265_2022/val_annotations.json"),
+    annotation_file=get_dataset_dir(f"{TDT4265_DATASET_DIR}/val_annotations.json"),
 )
 data_val.gpu_transform = gpu_transform
 data_train.gpu_transform = gpu_transform

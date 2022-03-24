@@ -1,7 +1,7 @@
-from tops.config import LazyCall as L
+from neuralvision.tops.config.lazy import LazyConfig as L
 
 # The line belows inherits the configuration set for the tdt4265 dataset
-from dev.configs.tdt4265 import (
+from tdt4265 import (
     train,
     optimizer,
     schedulers,

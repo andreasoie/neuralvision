@@ -128,60 +128,28 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
-project/SSD/scripts/data/tdt4265_2022/
-
-project/SSD/scripts/datasets/tdt4265/
-
-datasets/tdt4265_2022/images/train/
-
-datasets/tdt4265_2022/images/val/
-
-datasets/tdt4265/train/
-
-datasets/tdt4265/val/
-
 datasets/tdt4265/images/train/
-
 datasets/tdt4265/images/val/
 
 datasets/mnist_detection/test/images/
-
 datasets/mnist_detection/test/labels/
-
 datasets/mnist_detection/train/images/
-
 datasets/mnist_detection/train/labels/
 
-datasets/utils/data/original_mnist/
-
 datasets/mnist_object_detection/train/labels/
-
-datasets/mnist_object_detection/val/labels/
-
-neuralvision/data/mnist_object_detection/train/labels/
-
-neuralvision/data/mnist_object_detection/val/labels/
-
-neuralvision/data/original_mnist/
-
-neuralvision/data/mnist_object_detection/train/images/
-
-datasets/original_mnist/
-
 datasets/mnist_object_detection/train/images/
-
+datasets/mnist_object_detection/val/labels/
 datasets/mnist_object_detection/val/images/
 
-neuralvision/data/mnist_object_detection/val/images/
+datasets/original_mnist/
+datasets/VOCdevkit/*
 
 neuralvision/outputs/ssd300/logs/
 
-*.gz
-
-*.pkl
-
 outputs/configs/ssd300/logs/tensorboard/
-
-*.patch
-
 outputs/configs/ssd300/logs/
+
+*.gz
+*.pkl
+*.patch
+*.xml

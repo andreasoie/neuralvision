@@ -1,5 +1,5 @@
 # Code modified from: https://github.com/hsjeong5/MNIST-for-Numpy
-
+import os
 import gzip
 import pathlib
 import pickle
@@ -13,18 +13,20 @@ filename = [
     ["training_labels", "train-labels-idx1-ubyte.gz"],
     ["test_labels", "t10k-labels-idx1-ubyte.gz"],
 ]
-SAVE_PATH = pathlib.Path("data/original_mnist")
+
+ROOT_DATASET_DIR = "datasets"
+SAVE_PATH = pathlib.Path(f"{ROOT_DATASET_DIR}/original_mnist")
 
 
 def download_mnist():
     SAVE_PATH.mkdir(exist_ok=True, parents=True)
-    base_url = "http://yann.lecun.com/exdb/mnist/"
+    BASE_URL = "http://yann.lecun.com/exdb/mnist/"
     for name in filename:
         filepath = SAVE_PATH.joinpath(name[1])
         if filepath.is_file():
             continue
         print("Downloading " + name[1] + "...")
-        request.urlretrieve(base_url + name[1], filepath)
+        request.urlretrieve(BASE_URL + name[1], filepath)
 
 
 def extract_mnist():

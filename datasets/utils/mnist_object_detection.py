@@ -96,7 +96,7 @@ def dataset_exists(dirpath: pathlib.Path, num_images):
 
     for image_id in range(num_images):
         label_path = dirpath.joinpath("labels", f"{image_id}.txt")
-        assert label_path.is_file(), f"{error_msg} {impath} \n\t{error_msg2}"
+        assert label_path.is_file(), f"{error_msg} {label_path} \n\t{error_msg2}"
     return True
 
 
@@ -108,7 +108,6 @@ def load_dataset(
     imsize: int = 300,
     max_digits_per_image: int = 20,
 ):
-    print(f"load_dataset() : {dirpath}")
     num_images = 10000 if is_train else 1000
     X_train, Y_train, X_test, Y_test = load_download_extract_mnist()
     X, Y = X_train, Y_train
@@ -177,7 +176,8 @@ def generate_dataset(
             labels.append(label)
             assert (
                 im[y0 : y0 + width, x0 : x0 + width].shape == digit.shape
-            ), f"imshape: {im[y0:y0+width, x0:x0+width].shape}, digit shape: {digit.shape}"
+            ), f"imshape: {im[y0:y0+width, x0:x0+width].shape}, \
+                digit shape: {digit.shape}"
             bbox = tight_bbox(digit, [x0, y0, x0 + width, y0 + width])
             bboxes.append(bbox)
 

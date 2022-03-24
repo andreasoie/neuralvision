@@ -82,7 +82,8 @@ def dataset_exists(dirpath: pathlib.Path, num_images):
     if not dirpath.is_dir():
         return False
     for image_id in range(num_images):
-        error_msg = f"MNIST dataset already generated in {dirpath}, \n\tbut did not find filepath:"
+        error_msg = f"MNIST dataset already generated in {dirpath}, \
+                    \n\tbut did not find filepath:"
         error_msg2 = f"You can delete the directory by running: rm -r {dirpath.parent}"
         impath = dirpath.joinpath("images", f"{image_id}.png")
         assert impath.is_file(), f"{error_msg} {impath} \n\t{error_msg2}"
