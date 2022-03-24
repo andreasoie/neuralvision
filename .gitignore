@@ -135,3 +135,7 @@ project/SSD/scripts/datasets/tdt4265/
 datasets/tdt4265_2022/images/train/
 
 datasets/tdt4265_2022/images/val/
+
+datasets/tdt4265/train/
+
+datasets/tdt4265/val/
