@@ -1,13 +1,17 @@
 import torch
 import torchvision
-from torch.optim.lr_scheduler import MultiStepLR, LinearLR
-from ssd.modeling import SSD300, SSDMultiboxLoss, backbones, AnchorBoxes
-from tops.config import LazyCall as L
-from ssd.data.mnist import MNISTDetectionDataset
-from ssd import utils
-from ssd.data.transforms import Normalize, ToTensor, GroundTruthBoxesToAnchors
-from .utils import get_dataset_dir, get_output_dir
 
+from ssd.utils import batch_collate, batch_collate_val
+from ssd.data.mnist_detection_dataset import MNISTDetectionDataset
+from ssd.data.transforms import GroundTruthBoxesToAnchors, Normalize, ToTensor
+from ssd.modeling import SSD300, AnchorBoxes, SSDMultiboxLoss, backbones
+from tops.config import LazyCall as L
+from torch.optim.lr_scheduler import LinearLR, MultiStepLR
+
+from dev.configs.dir_utils import get_dataset_dir, get_output_dir
+
+# DATASETS_DIR = "../datasets/"
+DATASETS_DIR = ""
 
 train = dict(
     batch_size=32,
@@ -73,7 +77,7 @@ schedulers = dict(
 
 data_train = dict(
     dataset=L(MNISTDetectionDataset)(
-        data_dir=get_dataset_dir("mnist_object_detection/train"),
+        data_dir=get_dataset_dir(DATASETS_DIR + "mnist_object_detection/train"),
         is_train=True,
         transform=L(torchvision.transforms.Compose)(
             transforms=[
@@ -91,7 +95,7 @@ data_train = dict(
         pin_memory=True,
         shuffle=True,
         batch_size="${...train.batch_size}",
-        collate_fn=utils.batch_collate,
+        collate_fn=batch_collate,
         drop_last=True,
     ),
     # GPU transforms can heavily speedup data augmentations.
@@ -105,7 +109,7 @@ data_train = dict(
 )
 data_val = dict(
     dataset=L(MNISTDetectionDataset)(
-        data_dir=get_dataset_dir("mnist_object_detection/val"),
+        data_dir=get_dataset_dir(DATASETS_DIR + "mnist_object_detection/val"),
         is_train=False,
         transform=L(torchvision.transforms.Compose)(transforms=[L(ToTensor)()]),
     ),
@@ -115,7 +119,7 @@ data_val = dict(
         pin_memory=True,
         shuffle=False,
         batch_size="${...train.batch_size}",
-        collate_fn=utils.batch_collate_val,
+        collate_fn=batch_collate_val,
     ),
     gpu_transform=L(torchvision.transforms.Compose)(
         transforms=[

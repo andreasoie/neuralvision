@@ -4,7 +4,7 @@ import pathlib
 from typing import List, Optional
 from argparse import ArgumentError
 
-from dev.tops.logger import global_step, log, logger
+from tops.logger import global_step, log, logger
 
 _checkpoint_dir = None
 _models = None

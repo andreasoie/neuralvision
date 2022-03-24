@@ -37,7 +37,7 @@ class BasicModel(torch.nn.Module):
 
         self.layers = self.get_layers()
 
-    def init_layers(self):
+    def get_layers(self):
         self.layer1 = torch.nn.Sequential(
             torch.nn.Conv2d(
                 self.image_channels, 32, kernel_size=3, stride=1, padding=1

@@ -7,6 +7,8 @@ def get_dataset_dir(dataset_relpath: str):
     if server_dir.is_dir():
         print("Found dataset directory in:", server_dir)
         return str(server_dir)
+
+    print(str(pathlib.Path("data", dataset_relpath)))
     return str(pathlib.Path("data", dataset_relpath))
 
 

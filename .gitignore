@@ -153,3 +153,25 @@ datasets/mnist_detection/train/images/
 datasets/mnist_detection/train/labels/
 
 datasets/utils/data/original_mnist/
+
+datasets/mnist_object_detection/train/labels/
+
+datasets/mnist_object_detection/val/labels/
+
+neuralvision/data/mnist_object_detection/train/labels/
+
+neuralvision/data/mnist_object_detection/val/labels/
+
+neuralvision/data/original_mnist/
+
+neuralvision/data/mnist_object_detection/train/images/
+
+datasets/original_mnist/
+
+datasets/mnist_object_detection/train/images/
+
+datasets/mnist_object_detection/val/images/
+
+neuralvision/data/mnist_object_detection/val/images/
+
+neuralvision/outputs/ssd300/logs/

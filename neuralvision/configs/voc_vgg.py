@@ -1,7 +1,7 @@
 # Inherit configs from the default ssd300
 import torchvision
 import torch
-from ssd.data import VOCDataset
+from ssd.data.voc_dataset import VOCDataset
 from ssd.modeling import backbones
 from tops.config import LazyCall as L
 from ssd.data.transforms import (

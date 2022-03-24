@@ -1,6 +1,5 @@
 import pathlib
 import zipfile
-from importlib.resources import path
 
 import requests
 import tqdm
