@@ -34,10 +34,12 @@ class TDT4265Dataset(data.Dataset):
         self.label_info = {}
         cnt = 0
         self.label_info[cnt] = "background"
+
         for cat in self.data["categories"]:
             cnt += 1
             self.label_map[cat["id"]] = cnt
             self.label_info[cnt] = cat["name"]
+
         # build inference for images
         for img in self.data["images"]:
             img_id = img["id"]
@@ -57,14 +59,11 @@ class TDT4265Dataset(data.Dataset):
         for k, v in list(self.images.items()):
             if len(v[2]) == 0:
                 self.images.pop(k)
+
         self.img_keys = list(self.images.keys())
         # Sorts the dataset to iterate over frames in the correct order
-        sort_frame = lambda k: int(str(pathlib.Path(k).stem.split("_")[-1]))
-        sort_video = lambda k: int(
-            str(pathlib.Path(k).stem.split("_")[-2].replace("Video", ""))
-        )
-        self.img_keys.sort(key=lambda key: sort_frame(self.images[key][0]))
-        self.img_keys.sort(key=lambda key: sort_video(self.images[key][0]))
+        self.img_keys.sort(key=lambda key: _sort_frame(self.images[key][0]))
+        self.img_keys.sort(key=lambda key: _sort_video(self.images[key][0]))
         self.transform = transform
 
     def __len__(self):
@@ -106,3 +105,13 @@ class TDT4265Dataset(data.Dataset):
 
     def get_annotations_as_coco(self):
         return COCO(self.annotate_file)
+
+
+def _sort_frame(k):
+    """Sorts the dataset to iterate over frames in the correct order"""
+    return int(str(pathlib.Path(k).stem.split("_")[-1]))
+
+
+def _sort_video(k):
+    """Sorts the dataset to iterate over frames in the correct order"""
+    return int(str(pathlib.Path(k).stem.split("_")[-2].replace("Video", "")))

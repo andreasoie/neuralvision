@@ -1,14 +1,15 @@
-import torch
-import tqdm
+from pathlib import Path
+
 import click
 import numpy as np
-from dev import tops
-from dev.ssd import utils
-from dev.tops.config import instantiate
+import torch
+import tqdm
+from neuralvision.helpers import load_config
+from neuralvision.tops.checkpointer.checkpointer import load_checkpoint
+from neuralvision.tops.config.instantiate import instantiate
+from neuralvision.tops.torch_utils import get_device, to_cuda
 from PIL import Image
 from vizer.draw import draw_boxes
-from dev.tops.checkpointer import load_checkpoint
-from pathlib import Path
 
 
 @torch.no_grad()
@@ -26,11 +27,11 @@ from pathlib import Path
 def run_demo(
     config_path: Path, score_threshold: float, image_dir: Path, output_dir: Path
 ):
-    cfg = utils.load_config(config_path)
-    model = tops.to_cuda(instantiate(cfg.model))
+    cfg = load_config(config_path)
+    model = to_cuda(instantiate(cfg.model))
     model.eval()
     ckpt = load_checkpoint(
-        cfg.output_dir.joinpath("checkpoints"), map_location=tops.get_device()
+        cfg.output_dir.joinpath("checkpoints"), map_location=get_device()
     )
     model.load_state_dict(ckpt["model"])
 
@@ -45,7 +46,7 @@ def run_demo(
         orig_img = np.array(Image.open(image_path).convert("RGB"))
         height, width = orig_img.shape[:2]
         img = cpu_transform({"image": orig_img})["image"].unsqueeze(0)
-        img = tops.to_cuda(img)
+        img = to_cuda(img)
         img = gpu_transform({"image": img})["image"]
         boxes, categories, scores = model(img, score_threshold=score_threshold)[0]
         print(scores)

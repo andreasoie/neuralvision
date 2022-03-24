@@ -1,5 +1,6 @@
 import argparse
 import pathlib
+
 import cv2
 import numpy as np
 import tqdm

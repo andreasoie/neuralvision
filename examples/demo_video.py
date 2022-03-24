@@ -1,14 +1,15 @@
 import pathlib
+
 import click
 import cv2
 import numpy as np
 import torch
 import tqdm
 
-from dev.tops import get_device, to_cuda
-from dev.tops.checkpointer import load_checkpoint
-from dev.tops.config import instantiate
-from dev.tops.utils import load_config
+from neuralvision.helpers import load_config
+from neuralvision.tops.checkpointer.checkpointer import load_checkpoint
+from neuralvision.tops.config.instantiate import instantiate
+from neuralvision.tops.torch_utils import get_device, to_cuda
 from vizer.draw import draw_boxes
 
 
