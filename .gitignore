@@ -131,3 +131,7 @@ dmypy.json
 project/SSD/scripts/data/tdt4265_2022/
 
 project/SSD/scripts/datasets/tdt4265/
+
+datasets/tdt4265_2022/images/train/
+
+datasets/tdt4265_2022/images/val/
