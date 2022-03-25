@@ -1,5 +1,16 @@
+import pprint
+
 import torch
 from easydict import EasyDict
+from omegaconf import OmegaConf
+
+
+def print_config(cfg):
+    container = OmegaConf.to_container(cfg)
+    pp = pprint.PrettyPrinter(indent=2, compact=False)
+    print("--------------------Config file below--------------------")
+    pp.pprint(container)
+    print("--------------------End of config file--------------------")
 
 
 def print_module_summary(module, inputs, max_nesting=3, skip_redundant=True):

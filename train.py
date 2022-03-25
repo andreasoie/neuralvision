@@ -2,14 +2,12 @@ import sys
 
 assert sys.version_info >= (3, 7), "This code requires python version >= 3.7"
 import functools
-import pprint
 import time
 from pathlib import Path
 
 import click
 import torch
 import tqdm
-from omegaconf import OmegaConf
 from torch.optim.lr_scheduler import ChainedScheduler
 
 from neuralvision.evaluate import evaluate
@@ -18,7 +16,7 @@ from neuralvision.tops import build, torch_utils
 from neuralvision.tops.checkpointer import checkpointer
 from neuralvision.tops.config.instantiate import instantiate
 from neuralvision.tops.logger import logger
-from neuralvision.tops.misc import print_module_summary
+from neuralvision.tops.misc import print_module_summary, print_config
 
 torch.backends.cudnn.benchmark = True
 
@@ -62,28 +60,14 @@ def train_epoch(
         # torch.cuda.amp skips gradient steps if backward pass produces NaNs/infs.
         # If it happens in the first iteration, scheduler.step() will throw exception
         logger.step()
-
     return
-
-
-def print_config(cfg):
-    container = OmegaConf.to_container(cfg)
-    pp = pprint.PrettyPrinter(indent=2, compact=False)
-    print("--------------------Config file below--------------------")
-    pp.pprint(container)
-    print("--------------------End of config file--------------------")
 
 
 @click.command()
 @click.argument(
     "config_path", type=click.Path(exists=True, dir_okay=False, path_type=Path)
 )
-@click.option(
-    "--evaluate-only",
-    default=False,
-    is_flag=True,
-    help="Only run evaluation, no training.",
-)
+@click.option("--evaluate-only", default=False, is_flag=True, help="Eval only")
 def train(config_path: Path, evaluate_only: bool):
 
     logger.DEFAULT_SCALAR_LEVEL = logger.DEBUG
@@ -137,6 +121,7 @@ def train(config_path: Path, evaluate_only: bool):
         evaluation_fn()
         exit()
 
+    # Helps perform the steps of gradient scaling conveniently
     scaler = torch.cuda.amp.GradScaler(enabled=torch_utils.AMP())
 
     dummy_input = torch_utils.to_cuda(
@@ -146,7 +131,7 @@ def train(config_path: Path, evaluate_only: bool):
     print_module_summary(model, (dummy_input,))
 
     start_epoch = logger.epoch()
-    for epoch in range(start_epoch, cfg.train.epochs):
+    for _ in range(start_epoch, cfg.train.epochs):
         start_epoch_time = time.time()
         train_epoch(
             model,

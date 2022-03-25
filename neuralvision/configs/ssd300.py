@@ -2,8 +2,9 @@ import os
 
 import torch
 import torchvision
-from neuralvision.backbones.basic import BasicModel
 from neuralvision.configs.dir_utils import get_dataset_dir, get_output_dir
+
+from neuralvision.backbones.basic import BasicModel
 from neuralvision.datasets_classes.mnist_detection_dataset import MNISTDetectionDataset
 from neuralvision.helpers import batch_collate, batch_collate_val
 from neuralvision.ssd.anchor_boxes import AnchorBoxes
