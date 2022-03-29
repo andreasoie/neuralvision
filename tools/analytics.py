@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import torch
+import seaborn as sns
 
 plt.rcParams["text.usetex"] = True
 
@@ -160,6 +161,32 @@ def _calculate_aspect(width: int, height: int) -> str:
     y = int(height / r)
 
     return f"{x}:{y}"
+
+
+def view_aspect_ratio_distribution(cleaned_annotations: pd.DataFrame) -> None:
+    """
+    View the distribution of aspect ratios of the bounding boxes.
+    """
+
+    aspects = []
+
+    for row in cleaned_annotations.iterrows():
+        aspect = _calculate_aspect(row[1]["width"], row[1]["height"])
+        a, b = aspect.split(":")
+        aspects.append(int(a) / int(b))
+
+    min_ratio = round(min(aspects), 1)
+    max_ratio = round(max(aspects), 1)
+
+    plt.figure(dpi=120)
+    sns.histplot(aspects)
+    plt.title(
+        "Aspect Ratio Distribution (min: {}, max: {})".format(min_ratio, max_ratio)
+    )
+    plt.xlabel("Aspect Ratio")
+    plt.ylabel("Frequency")
+    plt.xlim(0, 6)
+    plt.show()
 
 
 def preprocess_sample(sample, tfms, std, mean) -> Tuple[np.ndarray, np.ndarray]:
