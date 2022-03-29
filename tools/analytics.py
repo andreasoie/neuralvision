@@ -1,22 +1,22 @@
 from __future__ import annotations
 
-import matplotlib.pyplot as plt
-import pandas as pd
-import torch
-import torchvision
 import json
 from typing import Dict, List, Tuple, Union
 
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+import torch
+
 plt.rcParams["text.usetex"] = True
 
-from neuralvision.tops.config.lazy import LazyConfig
 from neuralvision.helpers import batch_collate
 from neuralvision.tops.config.instantiate import instantiate
+from neuralvision.tops.config.lazy import LazyConfig
 from omegaconf import OmegaConf
 from omegaconf.dictconfig import DictConfig
-from torch.utils.data.dataloader import _MultiProcessingDataLoaderIter
-from vizer.draw import draw_boxes
 from PIL import ImageFont
+from vizer.draw import draw_boxes
 
 
 def get_config(config_path: str, batch_size: int = 1):
@@ -112,8 +112,13 @@ def process_categories(loaded_catagories: List[dict]) -> pd.DataFrame:
     return pd.DataFrame(loaded_catagories).drop(columns=["supercategory"])
 
 
-def load_annotation_file(cfg: OmegaConf) -> Union[Dict, None]:
-    _file = cfg["data_train"]["dataset"]["annotation_file"]
+def load_annotation_file(cfg: OmegaConf, set_type: str) -> Union[Dict, None]:
+    if set_type == "train":
+        _file = cfg["data_train"]["dataset"]["annotation_file"]
+    elif set_type == "val":
+        _file = cfg["data_val"]["dataset"]["annotation_file"]
+    else:
+        raise ValueError(f"Unknown set_type: {set_type}")
     if _file.endswith(".json"):
         with open(_file, "r") as f:
             return json.load(f)
@@ -121,49 +126,86 @@ def load_annotation_file(cfg: OmegaConf) -> Union[Dict, None]:
         raise NotImplementedError("Only json are supported!")
 
 
+def get_avg_box_metrics(
+    annotations: pd.DataFrame, unique_catagories: List[str]
+) -> pd.DataFrame:
+    table = {"dimension": ["area", "aspect", "width", "height"]}
+    for category in unique_catagories:
+        table[category] = _get_avg_box_metric(annotations, category)
+    return pd.DataFrame(table)
+
+
+def _get_avg_box_metric(
+    annotations: pd.DataFrame, category_id: str
+) -> Tuple[float, float, float, str]:
+    """Returns the average width and height of the bounding boxes."""
+    blob = annotations[annotations["category_id"] == category_id]
+    blob = blob.drop(columns=["id", "image_id", "category_id"]).describe().round(2)
+    mean_width = blob["width"]["mean"]
+    mean_heigth = blob["height"]["mean"]
+    mean_area = round(mean_width * mean_heigth, 2)
+    mean_aspect = _calculate_aspect(mean_width, mean_heigth)
+    return (mean_area, mean_aspect, blob["width"]["mean"], blob["height"]["mean"])
+
+
+def _calculate_aspect(width: int, height: int) -> str:
+    width, height = int(width), int(height)
+
+    def gcd(a, b):
+        """highest number that evenly divides both width and height."""
+        return a if b == 0 else gcd(b, a % b)
+
+    r = gcd(width, height)
+    x = int(width / r)
+    y = int(height / r)
+
+    return f"{x}:{y}"
+
+
+def preprocess_sample(sample, tfms, std, mean) -> Tuple[np.ndarray, np.ndarray]:
+
+    # Reapply transforms
+    sample = tfms(sample)
+
+    # Normalize
+    image = sample["image"] * std + mean
+    image = (image * 255).byte()[0]
+    boxes = sample["boxes"][0]
+
+    # Percentage size to pixel size
+    boxes[:, [0, 2]] *= image.shape[-1]
+    boxes[:, [1, 3]] *= image.shape[-2]
+    # Swap axes to match Matplotlib
+    image = image.permute(1, 2, 0)
+    # Detach
+    image = image.cpu().numpy()
+    boxes = boxes.cpu().numpy()
+    return image, boxes
+
+
 def visualize_sample(
-    it: _MultiProcessingDataLoaderIter,
+    img_id,
+    image,
+    boxes,
+    labels,
     lblmap: DictConfig,
-    tfms: torchvision.transforms.Compose,
-    image_mean: torch.Tensor,
-    image_std: torch.Tensor,
     viz_cfg: dict = None,
 ):
-    """supported keys for single sample:
-    Key [image]: shape=torch.Size([1, 3, 128, 1024]), dtype=torch.float32
-    Key [boxes]: shape=torch.Size([1, 14, 4]), dtype=torch.float32
-    Key [labels]: shape=torch.Size([1, 14]), dtype=torch.int64
-    Key [width]: shape=torch.Size([1]), dtype=torch.int64
-    Key [height]: shape=torch.Size([1]), dtype=torch.int64
-    Key [image_id]: shape=torch.Size([1]), dtype=torch.int64
-    """
     if viz_cfg is None:
         viz_cfg = {"figsize": (30, 20), "dpi": 120}
 
-    sample = next(it)
-    sample = tfms(sample)
-
-    # Preprocess
-    image = sample["image"] * image_std + image_mean
-    image = (image * 255).byte()[0]
-    boxes = sample["boxes"][0]
-    boxes[:, [0, 2]] *= image.shape[-1]
-    boxes[:, [1, 3]] *= image.shape[-2]
-
     # Add boxes
-    im = image.permute(1, 2, 0).cpu().numpy()
-    custom_font = ImageFont.truetype("Dyuthi-Regular.ttf", size=12)
     im = draw_boxes(
-        image=im,
-        boxes=boxes.cpu().numpy(),
-        labels=sample["labels"][0].cpu().numpy().tolist(),
+        image=image,
+        boxes=boxes,
+        labels=labels,
         class_name_map=lblmap,
         width=2,
-        font=custom_font,
+        font=ImageFont.truetype("Dyuthi-Regular.ttf", size=12),
     )
 
     plt.figure(figsize=viz_cfg["figsize"], dpi=viz_cfg["dpi"])
     plt.axis("off")
     plt.imshow(im)
-    plt.title(f"Image ID: {sample['image_id'][0]}", fontsize=12, fontweight="bold")
+    plt.title(f"Image ID: {img_id}", fontsize=12, fontweight="bold")
     plt.show()
