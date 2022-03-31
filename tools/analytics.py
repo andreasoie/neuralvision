@@ -11,6 +11,7 @@ import torch
 import seaborn as sns
 
 plt.rcParams["text.usetex"] = True
+sns.set()
 
 from neuralvision.helpers import batch_collate
 from neuralvision.tops.config.instantiate import instantiate
@@ -178,17 +179,32 @@ def view_aspect_ratio_distribution(cleaned_annotations: pd.DataFrame) -> None:
         a, b = aspect.split(":")
         aspects.append(int(a) / int(b))
 
-    min_ratio = round(min(aspects), 1)
-    max_ratio = round(max(aspects), 1)
+    aspects = pd.Series(aspects)
+    min_ratio = aspects.min().round(2)
+    max_ratio = aspects.max().round(2)
+
+    # Find outlier
+    # outliers = aspects[np.abs(stats.zscore(aspects)) < 3]
+
+    outliers = aspects[~((aspects - aspects.mean()).abs() > 3 * aspects.std())]
+
+    q_low = aspects.quantile(0.01)
+    q_hi = aspects.quantile(0.99)
+
+    mean_aspect = aspects.mean().round(2)
 
     plt.figure(dpi=120)
     sns.histplot(aspects)
+    plt.axvline(q_low, color="r", linestyle="--", label="1\\% quantile")
+    plt.axvline(q_hi, color="r", linestyle="--", label="99\\% quantile")
+    plt.axvline(mean_aspect, color="g", linestyle="--", label="mean")
     plt.title(
         "Aspect Ratio Distribution (min: {}, max: {})".format(min_ratio, max_ratio)
     )
     plt.xlabel("Aspect Ratio")
-    plt.ylabel("Frequency")
+    plt.ylabel("Number of boxes")
     plt.xlim(0, 6)
+    plt.legend()
     plt.show()
 
 
