@@ -1,5 +1,4 @@
 # Inherit configs from the default ssd300
-import os
 import torchvision
 
 from neuralvision.datasets_classes.tdt4265_dataset import TDT4265Dataset
@@ -9,14 +8,26 @@ from neuralvision.transforms.target_transform import GroundTruthBoxesToAnchors
 from neuralvision.transforms.transform import Resize, ToTensor
 
 from neuralvision.configs.dir_utils import get_dataset_dir
-from neuralvision.configs.ssd300 import data_train, data_val, model, train
+
+# absolute import causes issues, using relative imports
+from .ssd300 import (
+    train,
+    anchors,
+    optimizer,
+    schedulers,
+    backbone,
+    model,
+    data_train,
+    data_val,
+    loss_objective,
+)
 
 TDT4265_DATASET_DIR = "datasets/tdt4265"
 
 # Keep the model, except change the backbone and number of classes
-train["imshape"] = (128, 1024)
-train["image_channels"] = 3
-model["num_classes"] = 8 + 1  # Add 1 for background class
+train.imshape = (128, 1024)
+train.image_channels = 3
+model.num_classes = 8 + 1  # Add 1 for background class
 
 train_cpu_transform = L(torchvision.transforms.Compose)(
     transforms=[
