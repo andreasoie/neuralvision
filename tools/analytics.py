@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 from typing import Dict, List, Tuple, Union
 
 import matplotlib.pyplot as plt
@@ -18,6 +19,8 @@ from omegaconf import OmegaConf
 from omegaconf.dictconfig import DictConfig
 from PIL import ImageFont
 from vizer.draw import draw_boxes
+
+from PIL import Image
 
 
 def get_config(config_path: str, batch_size: int = 1):
@@ -236,3 +239,40 @@ def visualize_sample(
     plt.imshow(im)
     plt.title(f"Image ID: {img_id}", fontsize=12, fontweight="bold")
     plt.show()
+
+
+def save_sample(
+    img_id,
+    image,
+    boxes,
+    labels,
+    lblmap: DictConfig,
+    viz_cfg: dict = None,
+    save_dir: str = None,
+):
+
+    if save_dir is None:
+        raise ValueError("save_dir must be specified!")
+
+    if viz_cfg is None:
+        if save_dir is not None:
+            viz_cfg = {"figsize": (30, 20), "dpi": 300}
+        else:
+            viz_cfg = {"figsize": (30, 20), "dpi": 120}
+
+    # Add boxes
+    im = draw_boxes(
+        image=image,
+        boxes=boxes,
+        labels=labels,
+        class_name_map=lblmap,
+        width=2,
+        font=ImageFont.truetype("Dyuthi-Regular.ttf", size=12),
+    )
+
+    if os.path.exists(save_dir) is False:
+        os.makedirs(save_dir)
+
+    im = Image.fromarray(im)
+    im = im.resize((im.size[0] * 3, im.size[1] * 3), Image.ANTIALIAS)
+    im.save(os.path.join(save_dir, f"{img_id}.jpg"))
