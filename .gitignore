@@ -153,3 +153,10 @@ outputs/configs/ssd300/logs/
 *.pkl
 *.patch
 *.xml
+datasets/tdt4265/videos/
+
+saved_images/performance_assessment/configs_tdt4265/val/
+
+saved_images/train/
+
+saved_images/val/
