@@ -2,26 +2,24 @@ from __future__ import annotations
 
 import json
 import os
+from pathlib import Path
 from typing import Dict, List, Tuple, Union
 
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import torch
 import seaborn as sns
-
-plt.rcParams["text.usetex"] = True
-sns.set()
-
+import torch
 from neuralvision.helpers import batch_collate
 from neuralvision.tops.config.instantiate import instantiate
 from neuralvision.tops.config.lazy import LazyConfig
 from omegaconf import OmegaConf
 from omegaconf.dictconfig import DictConfig
-from PIL import ImageFont
+from PIL import Image, ImageFont
 from vizer.draw import draw_boxes
 
-from PIL import Image
+plt.rcParams["text.usetex"] = True
+sns.set()
 
 
 def get_config(config_path: str, batch_size: int = 1):
@@ -143,6 +141,7 @@ def get_avg_box_metrics(
 def _get_avg_box_metric(
     annotations: pd.DataFrame, category_id: str
 ) -> Tuple[float, float, float, str]:
+
     """Returns the average width and height of the bounding boxes."""
     blob = annotations[annotations["category_id"] == category_id]
     blob = blob.drop(columns=["id", "image_id", "category_id"]).describe().round(2)
@@ -204,6 +203,82 @@ def view_aspect_ratio_distribution(cleaned_annotations: pd.DataFrame) -> None:
     plt.xlabel("Aspect Ratio")
     plt.ylabel("Number of boxes")
     plt.xlim(0, 6)
+    plt.legend()
+    plt.show()
+
+
+def read_tfscalar_to_jsonfiles(scalar_path: Union[Path, str]) -> List[dict]:
+    """reads a TF scaler.json file and converts it to a list of dictionaries"""
+    with open(scalar_path, "r") as f:
+        jsonfiles = f.readlines()
+    # Convert to list of dictionaries
+    return [json.loads(line) for line in jsonfiles]
+
+
+def convert_scalar_to_metrics_map(scalar_path: Union[Path, str]) -> pd.DataFrame:
+    jsonfiles = read_tfscalar_to_jsonfiles(scalar_path)
+    # Find the dict containing anything mAP related (e.g. metrics/mAP )
+    map_key = "metrics/mAP"
+    metrics = [jsonfile for jsonfile in jsonfiles if map_key in jsonfile]
+    return pd.DataFrame(metrics)
+
+
+def convert_scalar_to_metrics_loss(scalar_path: Union[Path, str]) -> pd.DataFrame:
+    jsonfiles = read_tfscalar_to_jsonfiles(scalar_path)
+    # Find the dict containing anything loss related (e.g. metrics/mAP )
+    map_key = "loss/total_loss"
+    metrics = [jsonfile for jsonfile in jsonfiles if map_key in jsonfile]
+    return pd.DataFrame(metrics)
+
+
+def vizualize_metrics(
+    metric_frame: pd.DataFrame, metric_types: List[str], axis_cfg: dict
+) -> None:
+    plt.figure(figsize=(6, 2), dpi=300)
+    for metric_type in metric_types:
+        sns.lineplot(
+            x="global_step",
+            y=metric_type,
+            markers=True,
+            dashes=False,
+            data=metric_frame,
+            label=metric_type.split("/")[1],
+        )
+    # Scale axis if needed
+    if axis_cfg is not None:
+        if axis_cfg["x"] is not None:
+            plt.xlim(axis_cfg["x"][0], axis_cfg["x"][1])
+        if axis_cfg["y"] is not None:
+            plt.ylim(axis_cfg["y"][0], axis_cfg["y"][1])
+    plt.xlabel("Global Steps")
+    plt.ylabel("(Mean) Average Precision")
+    plt.title("Metric: (m)AP")
+    plt.legend()
+    plt.show()
+
+
+def vizualize_loss(
+    loss_frame: pd.DataFrame, loss_types: List[str], axis_cfg: dict = None
+) -> None:
+    plt.figure(figsize=(6, 2), dpi=300)
+    for loss_type in loss_types:
+        sns.lineplot(
+            x="global_step",
+            y=loss_type,
+            data=loss_frame,
+            label=loss_type.split("/")[1],
+        )
+    # Scale axis if needed
+    if axis_cfg is not None:
+        if axis_cfg["x"] is not None:
+            plt.xlim(axis_cfg["x"][0], axis_cfg["x"][1])
+        if axis_cfg["y"] is not None:
+            plt.ylim(axis_cfg["y"][0], axis_cfg["y"][1])
+    plt.xlabel("Global Steps")
+    plt.yticks
+    plt.ylabel("Loss")
+    plt.title("Metric: Loss")
+
     plt.legend()
     plt.show()
 
