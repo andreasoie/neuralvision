@@ -23,15 +23,15 @@ def main(config_path):
         batch = to_cuda(batch)
         batch = gpu_transform(batch)
     torch.cuda.synchronize()
-    start_time = time.time()
+    start_time = time.perf_counter()
     n_images = 0
     for batch in dataloader:
         batch = to_cuda(batch)
         batch = gpu_transform(batch)
         n_images += batch["image"].shape[0]
     torch.cuda.synchronize()
-    elapsed_time = time.time() - start_time
-    images_per_sec = n_images / elapsed_time
+    elapsed_time = time.perf_counter() - start_time
+    images_per_sec = round(n_images / elapsed_time, 3)
     print("Data pipeline runtime:", images_per_sec, "images/sec")
 
 

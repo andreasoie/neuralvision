@@ -9,7 +9,7 @@ from neuralvision.tops.torch_utils import get_device, to_cuda
 from neuralvision.tops.checkpointer.checkpointer import load_checkpoint
 from neuralvision.helpers import load_config, batch_collate
 from neuralvision.tops.config.instantiate import instantiate
-from neuralvision.tops.config.lazy import LazyConfig as L
+from neuralvision.tops.config.lazy import LazyCall as L
 from neuralvision.transforms.transform import ToTensor
 
 
@@ -128,7 +128,9 @@ def create_and_save_comparison_images(
 
 
 def get_save_folder_name(cfg, dataset_to_visualize):
-    return os.path.join("performance_assessment", cfg.run_name, dataset_to_visualize)
+    return os.path.join(
+        "saved_images/performance_assessment", cfg.run_name, dataset_to_visualize
+    )
 
 
 @click.command()
