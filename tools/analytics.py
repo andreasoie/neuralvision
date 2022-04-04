@@ -51,12 +51,11 @@ def prepare_dataset(cfg: OmegaConf, dataset_type: str, batch_size: int):
 
 
 def calculate_mean_std(cfg: OmegaConf) -> Tuple[torch.tensor, torch.tensor]:
-    """Assumes that the first GPU transform is Normalize
-    - If it fails, just change the index from 0."""
-    image_mean = torch.tensor(cfg.data_train.gpu_transform.transforms[0].mean).view(
+    """Assumes normalize GPU transform is last in the list"""
+    image_mean = torch.tensor(cfg.data_train.gpu_transform.transforms[-1].mean).view(
         1, 3, 1, 1
     )
-    image_std = torch.tensor(cfg.data_train.gpu_transform.transforms[0].std).view(
+    image_std = torch.tensor(cfg.data_train.gpu_transform.transforms[-1].std).view(
         1, 3, 1, 1
     )
     return image_mean, image_std
@@ -209,25 +208,24 @@ def view_aspect_ratio_distribution(cleaned_annotations: pd.DataFrame) -> None:
 
 def read_tfscalar_to_jsonfiles(scalar_path: Union[Path, str]) -> List[dict]:
     """reads a TF scaler.json file and converts it to a list of dictionaries"""
-    with open(scalar_path, "r") as f:
-        jsonfiles = f.readlines()
-    # Convert to list of dictionaries
-    return [json.loads(line) for line in jsonfiles]
+    with open(scalar_path, "r") as tfscaler:
+        # Convert to list of dictionaries
+        return [json.loads(line) for line in tfscaler.readlines()]
 
 
 def convert_scalar_to_metrics_map(scalar_path: Union[Path, str]) -> pd.DataFrame:
     jsonfiles = read_tfscalar_to_jsonfiles(scalar_path)
     # Find the dict containing anything mAP related (e.g. metrics/mAP )
-    map_key = "metrics/mAP"
-    metrics = [jsonfile for jsonfile in jsonfiles if map_key in jsonfile]
+    required_key = "metrics/mAP"
+    metrics = [jsonfile for jsonfile in jsonfiles if required_key in jsonfile]
     return pd.DataFrame(metrics)
 
 
 def convert_scalar_to_metrics_loss(scalar_path: Union[Path, str]) -> pd.DataFrame:
     jsonfiles = read_tfscalar_to_jsonfiles(scalar_path)
     # Find the dict containing anything loss related (e.g. metrics/mAP )
-    map_key = "loss/total_loss"
-    metrics = [jsonfile for jsonfile in jsonfiles if map_key in jsonfile]
+    required_key = "loss/total_loss"
+    metrics = [jsonfile for jsonfile in jsonfiles if required_key in jsonfile]
     return pd.DataFrame(metrics)
 
 
@@ -329,6 +327,53 @@ def visualize_sample(
     plt.axis("off")
     plt.imshow(im)
     plt.title(f"Image ID: {img_id}", fontsize=12, fontweight="bold")
+    plt.show()
+
+
+def dual_visualize_sample(img1: dict, img2: dict):
+
+    img_id_1 = img1["img_id"]
+    image_1 = img1["image"]
+    boxes_1 = img1["boxes"]
+    labels_1 = img1["labels"]
+    lblmap_1 = img1["lblmap"]
+
+    img_id_2 = img2["img_id"]
+    image_2 = img2["image"]
+    boxes_2 = img2["boxes"]
+    labels_2 = img2["labels"]
+    lblmap_2 = img2["lblmap"]
+
+    viz_cfg = {"figsize": (30, 20), "dpi": 120}
+
+    # Add boxes
+    im1 = draw_boxes(
+        image=image_1,
+        boxes=boxes_1,
+        labels=labels_1,
+        class_name_map=lblmap_1,
+        width=2,
+        font=ImageFont.truetype("Dyuthi-Regular.ttf", size=12),
+    )
+
+    # Add boxes
+    im2 = draw_boxes(
+        image=image_2,
+        boxes=boxes_2,
+        labels=labels_2,
+        class_name_map=lblmap_2,
+        width=2,
+        font=ImageFont.truetype("Dyuthi-Regular.ttf", size=12),
+    )
+
+    merged_img = np.concatenate([im1, im2], axis=0)
+
+    plt.figure(figsize=viz_cfg["figsize"], dpi=viz_cfg["dpi"])
+    plt.axis("off")
+    plt.imshow(merged_img)
+    plt.title(
+        f"Image ID: {img_id_1} and Image ID: {img_id_2}", fontsize=12, fontweight="bold"
+    )
     plt.show()
 
 
