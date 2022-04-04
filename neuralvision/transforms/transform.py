@@ -141,6 +141,7 @@ class RandomSampleCrop(torch.nn.Module):
                 current_boxes = boxes[mask, :].copy()
 
                 # take only matching gt labels
+                # print("---- LABELS: PRIOR ------")
                 current_labels = labels[mask]
 
                 # should we use the box left and top corner or the crop's
@@ -156,7 +157,7 @@ class RandomSampleCrop(torch.nn.Module):
 
                 sample["image"] = current_image
                 sample["boxes"] = current_boxes
-                sample["lables"] = current_labels
+                sample["labels"] = current_labels
                 return sample
 
 
