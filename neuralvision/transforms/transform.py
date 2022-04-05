@@ -39,6 +39,10 @@ def jaccard_numpy(box_a, box_b):
     return inter / union  # [A,B]
 
 
+
+
+    
+
 class RandomSampleCrop(torch.nn.Module):
     """Crop
     Implementation originally from: https://github.com/lufficc/SSD
@@ -174,6 +178,30 @@ class RandomHorizontalFlip(torch.nn.Module):
             boxes[:, [0, 2]] = 1 - boxes[:, [2, 0]]
             sample["boxes"] = boxes
         return sample
+
+class RandomErase(torch.nn.Module):
+    def __init__(self, p=0.5, scale=(0.01, 0.02), ratio=(0.1, 1), value=0, inplace=False) -> None:
+        super().__init__()
+        self.erase = torchvision.transforms.RandomErasing(p=p, scale=scale, ratio=ratio, value=value, inplace=inplace)
+
+    @torch.no_grad()
+    def __call__(self, sample):
+        image = sample["image"]
+        boxes = sample["boxes"]
+        labels = sample["labels"]
+
+        # selext a box to erase
+        idx = np.random.randint(0, boxes.shape[0])
+        box = boxes[idx]
+        x1, y1, x2, y2 = box[:4]
+        w, h = x2 - x1, y2 - y1
+        # erase the box
+        image[y1:y2, x1:x2] = self.erase(image[y1:y2, x1:x2])
+        # adjust the box
+        # boxes[idx, :4] = [x1, y1, x1 + w, y1 + h]
+        sample["image"] = image
+        return sample
+
 
 
 class Resize(torch.nn.Module):
