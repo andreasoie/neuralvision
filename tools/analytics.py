@@ -18,8 +18,12 @@ from omegaconf.dictconfig import DictConfig
 from PIL import Image, ImageFont
 from vizer.draw import draw_boxes
 
+# plt.style.use(["science", "ieee"])
+
 plt.rcParams["text.usetex"] = True
-sns.set()
+sns.set_style("whitegrid")
+sns.set_context("paper")
+sns.color_palette("rocket", as_cmap=True)
 
 
 def get_config(config_path: str, batch_size: int = 1):
@@ -232,14 +236,11 @@ def convert_scalar_to_metrics_loss(scalar_path: Union[Path, str]) -> pd.DataFram
 def vizualize_metrics(
     metric_frame: pd.DataFrame, metric_types: List[str], axis_cfg: dict
 ) -> None:
-    plt.figure(figsize=(6, 2), dpi=300)
+    plt.figure(figsize=(6, 2), dpi=1200)
     for metric_type in metric_types:
-        sns.lineplot(
-            x="global_step",
-            y=metric_type,
-            markers=True,
-            dashes=False,
-            data=metric_frame,
+        plt.plot(
+            metric_frame["global_step"],
+            metric_frame[metric_type],
             label=metric_type.split("/")[1],
         )
     # Scale axis if needed
@@ -248,8 +249,8 @@ def vizualize_metrics(
             plt.xlim(axis_cfg["x"][0], axis_cfg["x"][1])
         if axis_cfg["y"] is not None:
             plt.ylim(axis_cfg["y"][0], axis_cfg["y"][1])
-    plt.xlabel("Global Steps")
-    plt.ylabel("(Mean) Average Precision")
+    plt.xlabel("Global Steps", fontsize=8)
+    plt.ylabel("(Mean) Average Precision", fontsize=8)
     plt.title("Metric: (m)AP")
     plt.legend()
     plt.show()
@@ -258,23 +259,23 @@ def vizualize_metrics(
 def vizualize_loss(
     loss_frame: pd.DataFrame, loss_types: List[str], axis_cfg: dict = None
 ) -> None:
-    plt.figure(figsize=(6, 2), dpi=300)
+    plt.figure(figsize=(6, 2), dpi=1200)
     for loss_type in loss_types:
-        sns.lineplot(
-            x="global_step",
-            y=loss_type,
-            data=loss_frame,
+        plt.plot(
+            loss_frame["global_step"],
+            loss_frame[loss_type],
             label=loss_type.split("/")[1],
         )
+
     # Scale axis if needed
     if axis_cfg is not None:
         if axis_cfg["x"] is not None:
             plt.xlim(axis_cfg["x"][0], axis_cfg["x"][1])
         if axis_cfg["y"] is not None:
             plt.ylim(axis_cfg["y"][0], axis_cfg["y"][1])
-    plt.xlabel("Global Steps")
+    plt.xlabel("Global Steps", fontsize=8)
+    plt.ylabel("Loss", fontsize=8)
     plt.yticks
-    plt.ylabel("Loss")
     plt.title("Metric: Loss")
 
     plt.legend()
