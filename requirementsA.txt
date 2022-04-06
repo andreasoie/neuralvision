@@ -8,6 +8,6 @@ tensorboard
 numpy
 matplotlib
 seaborn
-
+mypy
 # because requirementsB depends on it (???) 
 pybind11
