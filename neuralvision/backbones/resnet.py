@@ -8,13 +8,13 @@ from torchvision.models import resnet18
 # from torchvision.ops.feature_pyramid_network import FeaturePyramidNetwork
 # from torchvision.models.efficientnet import EfficientNet
 
-OutputFeatures = List[Tuple[int]]
+OutputFeatures = List[List[int]]
 OutputChannels = List[int]
 ImageChannels = int
 
 
 class ResNetConfig:
-    def __init__(self, resnet: nn.Module, output_channels: OutputChannels) -> None:
+    def __init__(self, resnet: nn.Sequential, output_channels: OutputChannels) -> None:
         self.resnet = resnet
         self.out_channels = output_channels
 
@@ -33,10 +33,8 @@ class ResNetConfig:
     def init_custom_heads(self) -> nn.ModuleList:
         extra_layers = []
         inn_channels = self.out_channels[:-1]
-        mid_channels = self.out_channels  # [256, 256, 128, 128, 128]  # change?
-        # output_channels [256, 512, 512, 256, 256, 256]??
+        mid_channels = self.out_channels
         out_channels = self.out_channels[1:]
-
         channels = zip(inn_channels, mid_channels, out_channels)
         for ch_in, ch_mid, ch_out in channels:
             extra_layers.append(
@@ -76,7 +74,7 @@ class ResNet(nn.Module):
         self.heads = resnet_cfg.init_custom_heads()
         self.debug = True
 
-    def forward(self, x: torch.Tensor) -> Tuple[torch.Tensor]:
+    def forward(self, x: torch.Tensor) -> Tuple[torch.Tensor, ...]:
 
         x = self.tail(x)
         features = [x]

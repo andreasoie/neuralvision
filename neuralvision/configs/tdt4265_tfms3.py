@@ -6,6 +6,7 @@ from neuralvision.tops.config.lazy import LazyCall as L
 from neuralvision.transforms.gpu_transforms import ColorJitter, Normalize
 from neuralvision.transforms.target_transform import GroundTruthBoxesToAnchors
 from neuralvision.transforms.transform import (
+    RandomErase,
     RandomHorizontalFlip,
     RandomSampleCrop,
     Resize,
@@ -39,6 +40,7 @@ train_cpu_transform = L(torchvision.transforms.Compose)(
         L(RandomSampleCrop)(),
         L(ToTensor)(),
         L(RandomHorizontalFlip)(),
+        L(RandomErase)(),
         L(Resize)(imshape="${train.imshape}"),
         L(GroundTruthBoxesToAnchors)(anchors="${anchors}", iou_threshold=0.5),
     ]
@@ -54,12 +56,7 @@ val_cpu_transform = L(torchvision.transforms.Compose)(
         L(Resize)(imshape="${train.imshape}"),
     ]
 )
-train_gpu_transform = L(torchvision.transforms.Compose)(
-    transforms=[
-        L(ColorJitter)(brightness=0.4, contrast=0.4, saturation=0.4),
-        _TFMS_NORMALIZE,
-    ]
-)
+train_gpu_transform = L(torchvision.transforms.Compose)(transforms=[_TFMS_NORMALIZE])
 val_gpu_transform = L(torchvision.transforms.Compose)(transforms=[_TFMS_NORMALIZE])
 
 data_train["dataset"] = L(TDT4265Dataset)(

@@ -1,8 +1,8 @@
-from typing import List, Tuple
+from typing import List
 
 
 def validate_backbone_features(
-    output_feature_size: List[Tuple[int]],
+    output_feature_size: List[List[int]],
     output_channels: List[int],
     output_features: list,
 ):

@@ -10,7 +10,7 @@ class BasicModel(torch.nn.Module):
         self,
         output_channels: List[int],
         image_channels: int,
-        output_feature_sizes: List[Tuple[int]],
+        output_feature_sizes: List[List[int]],
     ):
         super().__init__()
         self.out_channels = output_channels
@@ -98,7 +98,6 @@ class BasicModel(torch.nn.Module):
 
     def forward(self, x):
         out_features = []
-
         for layer in self.layers:
             x = layer(x)
             out_features.append(x)
@@ -108,3 +107,18 @@ class BasicModel(torch.nn.Module):
                 self.output_feature_shape, self.out_channels, out_features
             )
         return tuple(out_features)
+
+
+if __name__ == "__main__":
+
+    ich = 3
+    feature_sizes = [[32, 256], [16, 128], [8, 64], [4, 32], [2, 16], [1, 8]]
+    output_channels = [128, 256, 128, 128, 64, 64]
+    model = BasicModel(output_channels, ich, feature_sizes)
+
+    test_img = torch.randn(1, ich, 128, 1024)
+
+    out = model(test_img)
+    print("Image: ", test_img.shape)
+    for o in out:
+        print("  {o.name}: ", o.shape)
