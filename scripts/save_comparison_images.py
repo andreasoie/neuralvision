@@ -1,19 +1,19 @@
-import cv2
 import os
-import click
-import numpy as np
-from tqdm import tqdm
 
-from vizer.draw import draw_boxes
-from neuralvision.tops.torch_utils import get_device, to_cuda
+import click
+import cv2
+import numpy as np
+from neuralvision.helpers import batch_collate, load_config
 from neuralvision.tops.checkpointer.checkpointer import load_checkpoint
-from neuralvision.helpers import load_config, batch_collate
 from neuralvision.tops.config.instantiate import instantiate
 from neuralvision.tops.config.lazy import LazyCall as L
+from neuralvision.tops.torch_utils import get_device, to_cuda
 from neuralvision.transforms.transform import ToTensor
+from tqdm import tqdm
+from vizer.draw import draw_boxes
 
 
-def get_config(config_path):
+def get_config(config_path: os.PathLike):
     cfg = load_config(config_path)
     cfg.train.batch_size = 1
     cfg.data_train.dataloader.shuffle = False
