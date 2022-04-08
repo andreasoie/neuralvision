@@ -91,9 +91,13 @@ if __name__ == "__main__":
     image_channels = 3
     output_channels = [128, 256, 128, 128, 64, 64]
     feature_sizes = [[32, 256], [16, 128], [8, 64], [4, 32], [2, 16], [1, 8]]
-    imshape = (300, 300)
+    imshape = (128, 1024)
     random_image = torch.randn(BS, image_channels, *imshape)
 
     resnet = ResNet(output_channels, image_channels, feature_sizes)
 
     out = resnet(random_image)
+
+    print("IMAGE: ", random_image.shape)
+    for o in out:
+        print("RESNET: ", o.shape)
