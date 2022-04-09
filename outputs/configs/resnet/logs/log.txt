@@ -98,3 +98,5 @@
 2022-04-05 18:52:46,539 [INFO ] Saved model to: outputs/configs/resnet/checkpoints/2450.ckpt
 2022-04-05 18:53:03,734 [INFO ] metrics/mAP: 0.054, metrics/mAP@0.5: 0.121, metrics/mAP@0.75: 0.037, metrics/mAP_small: 0.010, metrics/mAP_medium: 0.070, metrics/mAP_large: 0.145, metrics/average_recall@1: 0.021, metrics/average_recall@10: 0.064, metrics/average_recall@100: 0.064, metrics/average_recall@100_small: 0.011, metrics/average_recall@100_medium: 0.084, metrics/average_recall@100_large: 0.162, metrics/AP_car: 0.213, metrics/AP_bus: 0.000, metrics/AP_person: 0.002, metrics/AP_rider: 0.001, 
 2022-04-05 18:53:03,761 [INFO ] Saved model to: outputs/configs/resnet/checkpoints/2500.ckpt
+2022-04-08 12:30:18,441 [INFO ] Loaded checkpoint from outputs/configs/resnet/checkpoints/2500.ckpt
+2022-04-08 12:30:18,458 [INFO ] Resuming train from: epoch: 50,                 global step: 2500
