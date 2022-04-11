@@ -7,7 +7,12 @@ from neuralvision.ssd.ssd import SSD300
 from neuralvision.tops.config.lazy import LazyCall as L
 from neuralvision.transforms.gpu_transforms import Normalize
 from neuralvision.transforms.target_transform import GroundTruthBoxesToAnchors
-from neuralvision.transforms.transform import Resize, ToTensor
+from neuralvision.transforms.transform import (
+    RandomHorizontalFlip,
+    RandomSampleCrop,
+    Resize,
+    ToTensor,
+)
 
 # absolute import causes issues, using relative imports
 from .ssd300 import (
@@ -25,8 +30,8 @@ from .ssd300 import (
 TDT4265_DATASET_DIR = "datasets/tdt4265"
 
 # Keep the model, except change the backbone and number of classes
-train.imshape = (128, 1024)
-train.image_channels = 3
+train.imshape = (128, 1024)  # type: ignore
+train.image_channels = 3  # type: ignore
 model.num_classes = 8 + 1  # Add 1 for background class
 
 backbone = L(ResNet)(  # noqa: F811
@@ -35,16 +40,11 @@ backbone = L(ResNet)(  # noqa: F811
     output_feature_sizes="${anchors.feature_sizes}",
 )
 
-model = L(SSD300)(
-    feature_extractor="${backbone}",
-    anchors="${anchors}",
-    loss_objective="${loss_objective}",
-    num_classes=10 + 1,  # Add 1 for background
-)
-
 train_cpu_transform = L(torchvision.transforms.Compose)(
     transforms=[
+        L(RandomSampleCrop)(),
         L(ToTensor)(),
+        L(RandomHorizontalFlip)(),
         L(Resize)(imshape="${train.imshape}"),
         L(GroundTruthBoxesToAnchors)(anchors="${anchors}", iou_threshold=0.5),
     ]
