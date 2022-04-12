@@ -2,7 +2,7 @@ from typing import List, Tuple
 
 import torch
 from torch import nn
-from torchvision.models import resnet18
+from torchvision.models import resnet34, ResNet
 
 # from torchvision.models.resnet import Bottleneck
 # from torchvision.ops.feature_pyramid_network import FeaturePyramidNetwork
@@ -14,7 +14,7 @@ ImageChannels = int
 
 
 class ResNetConfig:
-    def __init__(self, resnet: nn.Sequential, output_channels: OutputChannels) -> None:
+    def __init__(self, resnet: ResNet, output_channels: OutputChannels) -> None:
         self.resnet = resnet
         self.out_channels = output_channels
 
@@ -69,7 +69,7 @@ class ResNet(nn.Module):
         self.image_channels = image_channels
         self.output_feature_shape = output_feature_sizes
 
-        resnet_cfg = ResNetConfig(resnet18(), output_channels)
+        resnet_cfg = ResNetConfig(resnet34(pretrained=True), output_channels)
         self.tail = resnet_cfg.init_custom_tail()
         self.heads = resnet_cfg.init_custom_heads()
         self.debug = True

@@ -3,7 +3,6 @@ import torchvision
 from neuralvision.backbones.resnet import ResNet
 from neuralvision.configs.dir_utils import get_dataset_dir
 from neuralvision.datasets_classes.tdt4265_dataset import TDT4265Dataset
-from neuralvision.ssd.ssd import SSD300
 from neuralvision.tops.config.lazy import LazyCall as L
 from neuralvision.transforms.gpu_transforms import Normalize
 from neuralvision.transforms.target_transform import GroundTruthBoxesToAnchors
@@ -42,9 +41,7 @@ backbone = L(ResNet)(  # noqa: F811
 
 train_cpu_transform = L(torchvision.transforms.Compose)(
     transforms=[
-        # L(RandomSampleCrop)(),
         L(ToTensor)(),
-        # L(RandomHorizontalFlip)(),
         L(Resize)(imshape="${train.imshape}"),
         L(GroundTruthBoxesToAnchors)(anchors="${anchors}", iou_threshold=0.5),
     ]
