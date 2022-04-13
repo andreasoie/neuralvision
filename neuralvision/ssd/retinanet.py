@@ -1,5 +1,5 @@
 import math
-from typing import List
+from typing import Any, List, Tuple
 import torch
 import torch.nn as nn
 from .anchor_encoder import AnchorEncoder
@@ -15,13 +15,13 @@ def create_subnet_stem(channels: int) -> nn.Sequential:
     return nn.Sequential(*layers)
 
 
-def create_subnet(in_chan: int, out_chan: int, initializer: str = "default") -> nn.Sequential:
+def create_subnet(in_chan: int, out_chan: int, init: str = "default") -> nn.Sequential:
     # build subnet stem
     stem = create_subnet_stem(in_chan)
-    # build subnet stem head
+    # build subnet head
     head = nn.Conv2d(in_chan, out_chan, kernel_size=3, stride=1, padding=1)
 
-    if initializer == "classification":
+    if init == "classification":
         # See Focal Loss paper for details
         for layer in stem.children():
             if isinstance(layer, nn.Conv2d):
@@ -30,44 +30,53 @@ def create_subnet(in_chan: int, out_chan: int, initializer: str = "default") -> 
         # Final output with its own initialization
         torch.nn.init.normal_(head.weight, std=0.01)
         torch.nn.init.constant_(head.bias, -math.log((1 - 0.01) / 0.01))
+        stem.add_module("convhead", head)
 
-    elif initializer == "regression":
+    elif init == "regression":
         # See Focal Loss paper for details
         for layer in stem.children():
+            
             if isinstance(layer, nn.Conv2d):
+                l1 = layer.weight
                 torch.nn.init.normal_(layer.weight, std=0.01)
                 torch.nn.init.zeros_(layer.bias)
+                l2 = layer.weight
+
+                # torch check if alike
+                torch.testing.assert_allclose(l1, l2, rtol=0, atol=0)
+
         # Final output with its own initialization
         torch.nn.init.normal_(head.weight, std=0.01)
         torch.nn.init.zeros_(head.bias)
-
-    elif initializer == "default":
+        stem.add_module("convhead", head)
+        
+    elif init == "default":
         # According to SSD paper
+        stem.add_module("convhead", head)
         for param in stem.parameters():
             if param.dim() > 1:
                 nn.init.xavier_uniform_(param)
     else:
-        raise NotImplementedError(f"Unknown subnet head of type: {initializer}")
+        raise NotImplementedError(f"Unknown subnet init: {init}")
 
     return nn.Sequential(*stem)
 
 class RetinaNet(nn.Module):
-    def __init__(
-        self, feature_extractor: nn.Module, anchors, loss_objective, num_classes: int
-    ) -> None:
+    """ Implements the Retina network """
+    def __init__(self, feature_extractor: nn.Module, anchors, loss_objective: Any, num_classes: int) -> None:
         super().__init__()
-        """ Implements the Retina network """
 
-        self.feature_extractor = feature_extractor
-        self.loss_func = loss_objective
-        self.num_classes = num_classes
-        self.regression_heads = []
-        self.classification_heads = []
+        self.feature_extractor: nn.Module = feature_extractor
+        self.loss_func: Any = loss_objective
+        self.num_classes: int = num_classes
+        self.regression_heads: List[nn.Sequential] = []
+        self.classification_heads: List[nn.Sequential] = []
         self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+        self.anchor_encoder = AnchorEncoder(anchors)
 
         """
         Initialize output heads that are applied
-        to each feature map from the backbone.
+        to each feature map from the feature_extractor.
 
         if n_boxes is consistent e.g. 6,6,6,6,.., 
         and out channels is consistent e.g. 256,256,256,256,..,
@@ -75,32 +84,20 @@ class RetinaNet(nn.Module):
         if not, we loop and use varying numb_boxes and channels
         NB: paper uses consistent - we don't ?? """
 
-        for n_boxes, out_ch in zip(anchors.num_boxes_per_fmap, self.feature_extractor.out_channels):
-            """Create RetinaNet Heads with optional (regression, classification, default)
-            initializer: regression => initializes regression focal style weights
-            initializer: classification => initializes regression focal style weights
-            initializer: default => initializes default SSD style weights"""
-            rhead = create_subnet(out_ch, n_boxes * 4, initializer = "regression")
-            chead = create_subnet(out_ch, n_boxes * self.num_classes, initializer = "classification")
-            
-            # Build heads with specified device
-            self.regression_heads.append(rhead.to(self.device))
-            self.classification_heads.append(chead.to(self.device))
+        for num_boxes, out_channel in zip(anchors.num_boxes_per_fmap, self.feature_extractor.out_channels):
+            """Create RetinaNet Subnet Heads 
+            init: regression => initializes regression focal style weights
+            init: classification => initializes regression focal style weights
+            init: default => initializes default SSD style weights"""
 
-        self.anchor_encoder = AnchorEncoder(anchors)
-        
+            reg_channels: Tuple[int, int] = out_channel, num_boxes * 4
+            cls_channels: Tuple[int, int] = out_channel, num_boxes * self.num_classes
 
-    def _init_regressor_weights(self):
+            reg_head = create_subnet(*reg_channels, init = "regression")
+            cls_head = create_subnet(*cls_channels, init = "classification")
 
-        for head in self.regression_heads:
-            for param in head.parameters():
-                if param.dim() > 1:
-                    nn.init.xavier_uniform_(param)
-
-        for head in self.classification_heads:
-            for param in head.parameters():
-                if param.dim() > 1:
-                    nn.init.xavier_uniform_(param)
+            self.regression_heads.append(reg_head.to(self.device))
+            self.classification_heads.append(cls_head.to(self.device))
 
     def regress_boxes(self, features):
         locations = []
