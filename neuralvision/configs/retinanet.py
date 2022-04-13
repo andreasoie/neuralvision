@@ -1,8 +1,9 @@
 # Inherit configs from the default ssd300
 import torchvision
-from neuralvision.backbones.retinanet import RetinaNet
+from neuralvision.backbones.resnetfpn import ResnetFPN
 from neuralvision.configs.dir_utils import get_dataset_dir
 from neuralvision.datasets_classes.tdt4265_dataset import TDT4265Dataset
+from neuralvision.ssd.retinanet import RetinaNet
 # from neuralvision.ssd.focal_loss import FocalLoss
 from neuralvision.tops.config.lazy import LazyCall as L
 from neuralvision.transforms.gpu_transforms import Normalize
@@ -27,15 +28,23 @@ from .ssd300 import (
 
 TDT4265_DATASET_DIR = "datasets/tdt4265"
 
+
+
 # Keep the model, except change the backbone and number of classes
 train.imshape = (128, 1024)  # type: ignore
 train.image_channels = 3  # type: ignore
-model.num_classes = 8 + 1  # Add 1 for background class
 
-backbone = L(RetinaNet)( 
+backbone = L(ResnetFPN)( 
     output_channels = [128, 256, 128, 128, 64, 64],
     image_channels = "${train.image_channels}",
     output_feature_sizes = "${anchors.feature_sizes}",
+)
+
+model = L(RetinaNet)(
+    feature_extractor="${backbone}",
+    anchors="${anchors}",
+    loss_objective="${loss_objective}",
+    num_classes=8 + 1,  # Add 1 for background
 )
 
 train_cpu_transform = L(torchvision.transforms.Compose)(

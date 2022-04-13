@@ -2,15 +2,9 @@ from typing import List, Tuple
 
 import torch
 from torch import nn
-from torchvision.models import resnet34, ResNet
+from torchvision.models import resnet18, resnet34, resnet50, ResNet
 
-# from torchvision.models.resnet import Bottleneck
-# from torchvision.ops.feature_pyramid_network import FeaturePyramidNetwork
-# from torchvision.models.efficientnet import EfficientNet
-
-OutputFeatures = List[List[int]]
-OutputChannels = List[int]
-ImageChannels = int
+from neuralvision.backbones.utils import OutputChannels, OutputFeatures, TensorTuple
 
 
 class ResNetConfig:
@@ -61,7 +55,7 @@ class ResNet(nn.Module):
     def __init__(
         self,
         output_channels: OutputChannels,
-        image_channels: ImageChannels,
+        image_channels: int,
         output_feature_sizes: OutputFeatures,
     ) -> None:
         super().__init__()
@@ -72,9 +66,8 @@ class ResNet(nn.Module):
         resnet_cfg = ResNetConfig(resnet34(pretrained=True), output_channels)
         self.tail = resnet_cfg.init_custom_tail()
         self.heads = resnet_cfg.init_custom_heads()
-        self.debug = True
 
-    def forward(self, x: torch.Tensor) -> Tuple[torch.Tensor, ...]:
+    def forward(self, x: torch.Tensor) -> TensorTuple:
 
         x = self.tail(x)
         features = [x]

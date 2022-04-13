@@ -4,8 +4,10 @@ from torch import Tensor
 
 TensorDict = OrderedDict[str, Tensor]
 TensorTuple = Tuple[Tensor, ...]
+TensorList = List[Tensor]
 OutputFeatures = List[List[int]]
 OutputChannels = List[int]
+
 
 def validate_backbone_features(
     output_feature_size: List[List[int]],
