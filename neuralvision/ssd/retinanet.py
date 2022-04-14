@@ -6,60 +6,47 @@ from .anchor_encoder import AnchorEncoder
 from torchvision.ops import batched_nms
 
 
-def create_subnet_stem(channels: int) -> nn.Sequential:
+def apply_weight_init(param, weight_style: str):
+    assert isinstance(param, torch.nn.modules.conv.Conv2d)
+    if weight_style == "default":
+        # Seee SSD paper
+        nn.init.xavier_uniform_(param.weight)
+        # the bias is zero I assume
+    elif weight_style == "classification":
+        # See Focal Loss paper
+        torch.nn.init.normal_(param.weight, std=0.01)
+        torch.nn.init.constant_(param.bias, -math.log((1 - 0.01) / 0.01))
+    elif weight_style == "regression":
+        # See Focal Loss paper
+        torch.nn.init.normal_(param.weight, std=0.01)
+        torch.nn.init.zeros_(param.bias)
+    else:
+        raise NotImplementedError(f"Unknown weight_style: {weight_style}")
+
+def create_subnet_stem(channels: int, weight_style: str) -> nn.Sequential:
     """ initializes the RetinaNet stem-subnetworks """
     layers = []
     for _ in range(4):
-        layers.append(nn.Conv2d(channels, channels, kernel_size=3, stride=1, padding=1))
-        layers.append(nn.ReLU(inplace=True))
+        _conv = nn.Conv2d(channels, channels, kernel_size=3, stride=1, padding=1)
+        _relu = nn.ReLU(inplace=True)
+        apply_weight_init(_conv, weight_style)
+        layers.append(_conv)
+        layers.append(_relu)
     return nn.Sequential(*layers)
 
+def create_subnet_head(in_chan: int, out_chan: int, weight_style: str) -> nn.Conv2d:
+    stem_head = nn.Conv2d(in_chan, out_chan, kernel_size=3, stride=1, padding=1)
+    apply_weight_init(stem_head, weight_style)
+    return stem_head
 
-def create_subnet(in_chan: int, out_chan: int, init: str = "default") -> nn.Sequential:
-    # build subnet stem
-    stem = create_subnet_stem(in_chan)
-    # build subnet head
-    head = nn.Conv2d(in_chan, out_chan, kernel_size=3, stride=1, padding=1)
-
-    if init == "classification":
-        # See Focal Loss paper for details
-        for layer in stem.children():
-            if isinstance(layer, nn.Conv2d):
-                torch.nn.init.normal_(layer.weight, std=0.01)
-                torch.nn.init.constant_(layer.bias, 0)
-        # Final output with its own initialization
-        torch.nn.init.normal_(head.weight, std=0.01)
-        torch.nn.init.constant_(head.bias, -math.log((1 - 0.01) / 0.01))
-        stem.add_module("convhead", head)
-
-    elif init == "regression":
-        # See Focal Loss paper for details
-        for layer in stem.children():
-            
-            if isinstance(layer, nn.Conv2d):
-                l1 = layer.weight
-                torch.nn.init.normal_(layer.weight, std=0.01)
-                torch.nn.init.zeros_(layer.bias)
-                l2 = layer.weight
-
-                # torch check if alike
-                torch.testing.assert_allclose(l1, l2, rtol=0, atol=0)
-
-        # Final output with its own initialization
-        torch.nn.init.normal_(head.weight, std=0.01)
-        torch.nn.init.zeros_(head.bias)
-        stem.add_module("convhead", head)
-        
-    elif init == "default":
-        # According to SSD paper
-        stem.add_module("convhead", head)
-        for param in stem.parameters():
-            if param.dim() > 1:
-                nn.init.xavier_uniform_(param)
-    else:
-        raise NotImplementedError(f"Unknown subnet init: {init}")
-
-    return nn.Sequential(*stem)
+def create_subnet(in_chan: int, out_chan: int, head_weight_style: str = "default") -> nn.Sequential:
+    stem_weight_style = "default" # Don't change focal init I guess (default => SSD)
+    # build subnet stem with initialized weights
+    stem = create_subnet_stem(in_chan, stem_weight_style)
+    # build subnet head with initialized weights
+    head = create_subnet_head(in_chan, out_chan, head_weight_style)
+    stem.add_module("convhead", head)
+    return stem
 
 class RetinaNet(nn.Module):
     """ Implements the Retina network """
@@ -69,10 +56,10 @@ class RetinaNet(nn.Module):
         self.feature_extractor: nn.Module = feature_extractor
         self.loss_func: Any = loss_objective
         self.num_classes: int = num_classes
+        self.anchor_encoder = AnchorEncoder(anchors)
         self.regression_heads: List[nn.Sequential] = []
         self.classification_heads: List[nn.Sequential] = []
         self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-        self.anchor_encoder = AnchorEncoder(anchors)
 
         """
         Initialize output heads that are applied
@@ -86,15 +73,15 @@ class RetinaNet(nn.Module):
 
         for num_boxes, out_channel in zip(anchors.num_boxes_per_fmap, self.feature_extractor.out_channels):
             """Create RetinaNet Subnet Heads 
-            init: regression => initializes regression focal style weights
-            init: classification => initializes regression focal style weights
-            init: default => initializes default SSD style weights"""
+            weight_style: regression => initializes regression focal style weights
+            weight_style: classification => initializes regression focal style weights
+            weight_style: default => initializes default SSD style weights"""
 
             reg_channels: Tuple[int, int] = out_channel, num_boxes * 4
             cls_channels: Tuple[int, int] = out_channel, num_boxes * self.num_classes
 
-            reg_head = create_subnet(*reg_channels, init = "regression")
-            cls_head = create_subnet(*cls_channels, init = "classification")
+            reg_head = create_subnet(*reg_channels, head_weight_style = "default")
+            cls_head = create_subnet(*cls_channels, head_weight_style = "classification")
 
             self.regression_heads.append(reg_head.to(self.device))
             self.classification_heads.append(cls_head.to(self.device))
