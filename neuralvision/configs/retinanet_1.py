@@ -1,50 +1,55 @@
 # Inherit configs from the default ssd300
 import torchvision
-from neuralvision.backbones.resnet import ResNet
+from neuralvision.backbones.resnetfpn import ResnetFPN
 from neuralvision.configs.dir_utils import get_dataset_dir
 from neuralvision.datasets_classes.tdt4265_dataset import TDT4265Dataset
+from neuralvision.ssd.retinanet import RetinaNet
 from neuralvision.ssd.ssd import SSD300
+from neuralvision.ssd.ssd_multibox_loss import SSDMultiboxLoss
 from neuralvision.tops.config.lazy import LazyCall as L
 from neuralvision.transforms.gpu_transforms import Normalize
 from neuralvision.transforms.target_transform import GroundTruthBoxesToAnchors
-from neuralvision.transforms.transform import (
-    RandomHorizontalFlip,
-    RandomSampleCrop,
-    Resize,
-    ToTensor,
-)
+from neuralvision.transforms.transform import Resize, ToTensor
 
 # absolute import causes issues, using relative imports
-from .ssd300 import (
-    anchors,
-    backbone,
-    data_train,
-    data_val,
-    loss_objective,
-    model,
-    optimizer,
-    schedulers,
-    train,
-)
+from .ssd300 import (anchors, backbone, data_train, data_val, loss_objective,
+                     model, optimizer, schedulers, train)
 
 TDT4265_DATASET_DIR = "datasets/tdt4265"
 
 # Keep the model, except change the backbone and number of classes
 train.imshape = (128, 1024)  # type: ignore
 train.image_channels = 3  # type: ignore
-model.num_classes = 8 + 1  # Add 1 for background class
+NUM_CLASSES = 8 + 1  # Add 1 for background
 
-backbone = L(ResNet)(  # noqa: F811
-    output_channels=[128, 256, 128, 128, 64, 64],
-    image_channels="${train.image_channels}",
-    output_feature_sizes="${anchors.feature_sizes}",
+backbone = L(ResnetFPN)( 
+    output_channels = [128, 256, 128, 128, 64, 64],
+    image_channels = "${train.image_channels}",
+    output_feature_sizes = "${anchors.feature_sizes}",
 )
+
+loss_objective = L(SSDMultiboxLoss)(anchors="${anchors}")
+
+# model = L(RetinaNet)(
+#     feature_extractor="${backbone}",
+#     anchors="${anchors}",
+#     loss_objective="${loss_objective}",
+#     num_classes=NUM_CLASSES, 
+#     use_deeper_head=False,
+#     use_weightstyle=False
+# )
+
+model = L(SSD300)(
+    feature_extractor="${backbone}",
+    anchors="${anchors}",
+    loss_objective="${loss_objective}",
+    num_classes=NUM_CLASSES,  # Add 1 for background
+)
+
 
 train_cpu_transform = L(torchvision.transforms.Compose)(
     transforms=[
-        L(RandomSampleCrop)(),
         L(ToTensor)(),
-        L(RandomHorizontalFlip)(),
         L(Resize)(imshape="${train.imshape}"),
         L(GroundTruthBoxesToAnchors)(anchors="${anchors}", iou_threshold=0.5),
     ]

@@ -16,14 +16,10 @@ from .ssd300 import (anchors, backbone, data_train, data_val, loss_objective,
 
 TDT4265_DATASET_DIR = "datasets/tdt4265"
 
-
-
 # Keep the model, except change the backbone and number of classes
 train.imshape = (128, 1024)  # type: ignore
 train.image_channels = 3  # type: ignore
-
 NUM_CLASSES = 8 + 1  # Add 1 for background
-
 
 backbone = L(ResnetFPN)( 
     output_channels = [128, 256, 128, 128, 64, 64],
@@ -36,6 +32,8 @@ model = L(RetinaNet)(
     anchors="${anchors}",
     loss_objective="${loss_objective}",
     num_classes=NUM_CLASSES,  # Add 1 for background
+    use_deeper_head=True,
+    use_weightstyle=True
 )
 
 loss_objective = L(FocalLoss)(anchors="${anchors}", alphas=[0.01, *[1]*(NUM_CLASSES - 1)])

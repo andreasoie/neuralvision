@@ -1,2 +1,4 @@
-python train.py neuralvision/configs/resnet.py
-python train.py neuralvision/configs/resnet_fpn.py
+python train.py neuralvision/configs/retinanet_1.py
+python train.py neuralvision/configs/retinanet_2.py
+python train.py neuralvision/configs/retinanet_3.py
+python train.py neuralvision/configs/retinanet_4.py

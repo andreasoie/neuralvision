@@ -146,7 +146,8 @@ datasets/VOCdevkit/*
 
  
 neuralvision/outputs/ssd300/logs/
-outputs/*
+outputs/
+outputs/configs/*
 outputs/configs/ssd300/logs/tensorboard/
 outputs/configs/ssd300/logs/
 

@@ -50,12 +50,15 @@ def create_subnet(in_chan: int, out_chan: int, head_weight_style: str = "default
 
 class RetinaNet(nn.Module):
     """ Implements the Retina network """
-    def __init__(self, feature_extractor: nn.Module, anchors, loss_objective: Any, num_classes: int) -> None:
+    def __init__(self, feature_extractor: nn.Module, anchors, loss_objective: Any, num_classes: int, use_deeper_head: bool, use_weightstyle: bool) -> None:
         super().__init__()
 
         self.feature_extractor: nn.Module = feature_extractor
         self.loss_func: Any = loss_objective
         self.num_classes: int = num_classes
+        self.use_deeper_head: bool = use_deeper_head
+        self.use_weightstyle: bool = use_weightstyle
+
         self.anchor_encoder = AnchorEncoder(anchors)
         self.regression_heads: List[nn.Sequential] = []
         self.classification_heads: List[nn.Sequential] = []
@@ -70,7 +73,8 @@ class RetinaNet(nn.Module):
         we can initialize only a single reg and class head
         if not, we loop and use varying numb_boxes and channels
         NB: paper uses consistent - we don't ?? """
-
+        rtmp = []
+        ctmp = []
         for num_boxes, out_channel in zip(anchors.num_boxes_per_fmap, self.feature_extractor.out_channels):
             """Create RetinaNet Subnet Heads 
             weight_style: regression => initializes regression focal style weights
@@ -80,11 +84,35 @@ class RetinaNet(nn.Module):
             reg_channels: Tuple[int, int] = out_channel, num_boxes * 4
             cls_channels: Tuple[int, int] = out_channel, num_boxes * self.num_classes
 
-            reg_head = create_subnet(*reg_channels, head_weight_style = "default")
-            cls_head = create_subnet(*cls_channels, head_weight_style = "classification")
+            if self.use_deeper_head:
 
-            self.regression_heads.append(reg_head.to(self.device))
-            self.classification_heads.append(cls_head.to(self.device))
+                reg_head_weight_style = "default"
+                cls_head_weight_style = "default"
+
+                if self.use_weightstyle:
+                    cls_head_weight_style = "classification"
+
+                # 5-LAYER
+                reg_head = create_subnet(*reg_channels, head_weight_style = reg_head_weight_style).to(self.device)
+                cls_head = create_subnet(*cls_channels, head_weight_style = cls_head_weight_style).to(self.device)
+            else:
+                # 1-LAYER
+                # TODO: create func for single-layer subnets which returns sequentials
+                reg_conv = nn.Conv2d(*reg_channels, kernel_size=3, padding=1)
+                cls_conv = nn.Conv2d(*cls_channels, kernel_size=3, padding=1)
+                nn.init.xavier_uniform_(reg_conv.weight)
+                nn.init.xavier_uniform_(cls_conv.weight)
+                rtmp.append(reg_conv)
+                ctmp.append(cls_conv)
+                reg_head = nn.Sequential(reg_conv).to(self.device)
+                cls_head = nn.Sequential(cls_conv).to(self.device)
+
+            self.regression_heads.append(reg_head)
+            self.classification_heads.append(cls_head)
+        
+
+        print(f"Regression heads = {len(rtmp)}: {rtmp}")
+        print(f"Classification heads = {len(ctmp)}: {ctmp}")
 
     def regress_boxes(self, features):
         locations = []
