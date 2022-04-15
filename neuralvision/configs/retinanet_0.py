@@ -19,6 +19,7 @@ TDT4265_DATASET_DIR = "datasets/tdt4265"
 # Keep the model, except change the backbone and number of classes
 train.imshape = (128, 1024)  # type: ignore
 train.image_channels = 3  # type: ignore
+anchors.aspect_ratios = [[2, 3], [2, 3], [2, 3], [2, 3], [2, 3], [2, 3]]
 NUM_CLASSES = 8 + 1  # Add 1 for background
 
 backbone = L(ResnetFPN)( 
@@ -32,8 +33,8 @@ model = L(RetinaNet)(
     anchors="${anchors}",
     loss_objective="${loss_objective}",
     num_classes=NUM_CLASSES,  # Add 1 for background
-    use_deeper_head=True,
-    use_weightstyle=True
+    use_deeper_head=False,
+    use_weightstyle=False
 )
 
 loss_objective = L(FocalLoss)(anchors="${anchors}", alphas=[0.01, *[1]*(NUM_CLASSES - 1)])

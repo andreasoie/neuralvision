@@ -8,17 +8,18 @@ from torchvision.ops import batched_nms
 
 def apply_weight_init(param, weight_style: str):
     assert isinstance(param, torch.nn.modules.conv.Conv2d)
+    _SIGMA, _CONF = 0.01, 0.01
     if weight_style == "default":
         # Seee SSD paper
         nn.init.xavier_uniform_(param.weight)
         # the bias is zero I assume
     elif weight_style == "classification":
         # See Focal Loss paper
-        torch.nn.init.normal_(param.weight, std=0.01)
-        torch.nn.init.constant_(param.bias, -math.log((1 - 0.01) / 0.01))
+        torch.nn.init.normal_(param.weight, std=_SIGMA)
+        torch.nn.init.constant_(param.bias, -math.log((1 - _CONF) / _CONF))
     elif weight_style == "regression":
         # See Focal Loss paper
-        torch.nn.init.normal_(param.weight, std=0.01)
+        torch.nn.init.normal_(param.weight, std=_SIGMA)
         torch.nn.init.zeros_(param.bias)
     else:
         raise NotImplementedError(f"Unknown weight_style: {weight_style}")
@@ -48,10 +49,10 @@ def create_subnet(in_chan: int, out_chan: int, head_weight_style: str = "default
     stem.add_module("convhead", head)
     return stem
 
-def create_singlenet(in_chan: int, out_chan: int, head_weight_style: str = "default"):
+def create_singlenet(in_chan: int, out_chan: int, head_weight_style: str = "default") -> nn.Sequential:
     conv = nn.Conv2d(in_chan, out_chan, kernel_size=3, stride=1, padding=1)
     apply_weight_init(conv, head_weight_style)
-    return conv
+    return nn.Sequential(conv)
 
 
 class RetinaNet(nn.Module):
@@ -66,9 +67,31 @@ class RetinaNet(nn.Module):
         self.use_weightstyle: bool = use_weightstyle
 
         self.anchor_encoder = AnchorEncoder(anchors)
-        self.regression_heads: nn.ModuleList = nn.ModuleList()
-        self.classification_heads: nn.ModuleList = nn.ModuleList()
         self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+
+        # TODO: Refactor below to separate func or similar
+        assert all(x==anchors.num_boxes_per_fmap[0] for x in anchors.num_boxes_per_fmap), "All elements must be equal"
+        assert all(x==self.feature_extractor.out_channels[0] for x in self.feature_extractor.out_channels), "All elements must be equal"
+        
+        # Get channel sizes. Its constant for all, so only need to get it once
+        num_boxes, out_channel = anchors.num_boxes_per_fmap[0], self.feature_extractor.out_channels[0]
+        reg_channels: Tuple[int, int] = out_channel, num_boxes * 4
+        cls_channels: Tuple[int, int] = out_channel, num_boxes * self.num_classes
+
+        reg_head_weight_style = "default"
+        cls_head_weight_style = "classification" if self.use_weightstyle else "default"
+
+        if self.use_deeper_head:
+            reg_net = create_subnet(*reg_channels, head_weight_style = reg_head_weight_style)
+            cls_net = create_subnet(*cls_channels, head_weight_style = cls_head_weight_style)
+        else:
+            reg_net = create_singlenet(*reg_channels, head_weight_style = reg_head_weight_style)
+            cls_net = create_singlenet(*cls_channels, head_weight_style = reg_head_weight_style)
+        
+        self.regression_heads = reg_net    
+        self.classification_heads = cls_net
+
+            
         """
         Initialize output heads that are applied
         to each feature map from the feature_extractor.
@@ -78,34 +101,37 @@ class RetinaNet(nn.Module):
         we can initialize only a single reg and class head
         if not, we loop and use varying numb_boxes and channels
         NB: paper uses consistent - we don't ?? """
-        for num_boxes, out_channel in zip(anchors.num_boxes_per_fmap, self.feature_extractor.out_channels):
-            """Create RetinaNet Subnet Heads 
-            weight_style: regression => initializes regression focal style weights
-            weight_style: classification => initializes regression focal style weights
-            weight_style: default => initializes default SSD style weights"""
+        # for num_boxes, out_channel in zip(anchors.num_boxes_per_fmap, self.feature_extractor.out_channels):
+        #     """Create RetinaNet Subnet Heads 
+        #     weight_style: regression => initializes regression focal style weights
+        #     weight_style: classification => initializes regression focal style weights
+        #     weight_style: default => initializes default SSD style weights"""
 
-            reg_channels: Tuple[int, int] = out_channel, num_boxes * 4
-            reg_head_weight_style = "default"
+        #     reg_channels: Tuple[int, int] = out_channel, num_boxes * 4
+        #     cls_channels: Tuple[int, int] = out_channel, num_boxes * self.num_classes
 
-            cls_channels: Tuple[int, int] = out_channel, num_boxes * self.num_classes
-            cls_head_weight_style = "classification" if self.use_weightstyle else "default"
+        #     reg_head_weight_style = "default"
+        #     cls_head_weight_style = "classification" if self.use_weightstyle else "default"
 
-            if self.use_deeper_head:
-                reg_net = create_subnet(*reg_channels, head_weight_style = reg_head_weight_style)
-                cls_net = create_subnet(*cls_channels, head_weight_style = cls_head_weight_style)
-            else:
-                reg_net = create_singlenet(*reg_channels, head_weight_style = "default")
-                cls_net = create_singlenet(*cls_channels, head_weight_style = "default")
+        #     if self.use_deeper_head:
+        #         reg_net = create_subnet(*reg_channels, head_weight_style = reg_head_weight_style)
+        #         cls_net = create_subnet(*cls_channels, head_weight_style = cls_head_weight_style)
+        #     else:
+        #         reg_net = create_singlenet(*reg_channels, head_weight_style = "default")
+        #         cls_net = create_singlenet(*cls_channels, head_weight_style = "default")
                
-            self.regression_heads.append(reg_net.to(self.device))
-            self.classification_heads.append(cls_net.to(self.device))
+        #     print(f"cls_net: {cls_net}")
+
+
+        #     self.regression_heads.append(reg_net.to(self.device))
+        #     self.classification_heads.append(cls_net.to(self.device))
 
     def regress_boxes(self, features):
         locations = []
         confidences = []
-        for i, x in enumerate(features):
-            bbox_delta = self.regression_heads[i](x).view(x.shape[0], 4, -1)
-            bbox_conf = self.classification_heads[i](x).view(x.shape[0], self.num_classes, -1)
+        for x in features:
+            bbox_delta = self.regression_heads(x).view(x.shape[0], 4, -1)
+            bbox_conf = self.classification_heads(x).view(x.shape[0], self.num_classes, -1)
             locations.append(bbox_delta)
             confidences.append(bbox_conf)
         bbox_delta = torch.cat(locations, 2).contiguous()
