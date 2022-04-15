@@ -27,6 +27,8 @@ backbone = L(ResnetFPN)(
     output_feature_sizes = "${anchors.feature_sizes}",
 )
 
+loss_objective = L(FocalLoss)(anchors="${anchors}", alphas=[0.01, *[1]*(NUM_CLASSES - 1)])
+
 model = L(RetinaNet)(
     feature_extractor="${backbone}",
     anchors="${anchors}",
@@ -36,7 +38,6 @@ model = L(RetinaNet)(
     use_weightstyle=False
 )
 
-loss_objective = L(FocalLoss)(anchors="${anchors}", alphas=[0.01, *[1]*(NUM_CLASSES - 1)])
 
 train_cpu_transform = L(torchvision.transforms.Compose)(
     transforms=[

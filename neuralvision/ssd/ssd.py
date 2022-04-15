@@ -38,8 +38,6 @@ class SSD300(nn.Module):
         
         self.anchor_encoder = AnchorEncoder(anchors)
         self._init_weights()
-        print(f"Regression heads = {len(self.regression_heads)}: {self.regression_heads}")
-        print(f"Classification heads = {len(self.classification_heads)}: {self.classification_heads}")
 
     def _init_weights(self):
         layers = [*self.regression_heads, *self.classification_heads]

@@ -30,22 +30,14 @@ backbone = L(ResnetFPN)(
 
 loss_objective = L(SSDMultiboxLoss)(anchors="${anchors}")
 
-# model = L(RetinaNet)(
-#     feature_extractor="${backbone}",
-#     anchors="${anchors}",
-#     loss_objective="${loss_objective}",
-#     num_classes=NUM_CLASSES, 
-#     use_deeper_head=False,
-#     use_weightstyle=False
-# )
-
-model = L(SSD300)(
+model = L(RetinaNet)(
     feature_extractor="${backbone}",
     anchors="${anchors}",
     loss_objective="${loss_objective}",
-    num_classes=NUM_CLASSES,  # Add 1 for background
+    num_classes=NUM_CLASSES, 
+    use_deeper_head=False,
+    use_weightstyle=False
 )
-
 
 train_cpu_transform = L(torchvision.transforms.Compose)(
     transforms=[

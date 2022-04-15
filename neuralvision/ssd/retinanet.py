@@ -48,6 +48,12 @@ def create_subnet(in_chan: int, out_chan: int, head_weight_style: str = "default
     stem.add_module("convhead", head)
     return stem
 
+def create_singlenet(in_chan: int, out_chan: int, head_weight_style: str = "default"):
+    conv = nn.Conv2d(in_chan, out_chan, kernel_size=3, stride=1, padding=1)
+    apply_weight_init(conv, head_weight_style)
+    return conv
+
+
 class RetinaNet(nn.Module):
     """ Implements the Retina network """
     def __init__(self, feature_extractor: nn.Module, anchors, loss_objective: Any, num_classes: int, use_deeper_head: bool, use_weightstyle: bool) -> None:
@@ -60,10 +66,9 @@ class RetinaNet(nn.Module):
         self.use_weightstyle: bool = use_weightstyle
 
         self.anchor_encoder = AnchorEncoder(anchors)
-        self.regression_heads: List[nn.Sequential] = []
-        self.classification_heads: List[nn.Sequential] = []
+        self.regression_heads: nn.ModuleList = nn.ModuleList()
+        self.classification_heads: nn.ModuleList = nn.ModuleList()
         self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-
         """
         Initialize output heads that are applied
         to each feature map from the feature_extractor.
@@ -73,8 +78,6 @@ class RetinaNet(nn.Module):
         we can initialize only a single reg and class head
         if not, we loop and use varying numb_boxes and channels
         NB: paper uses consistent - we don't ?? """
-        rtmp = []
-        ctmp = []
         for num_boxes, out_channel in zip(anchors.num_boxes_per_fmap, self.feature_extractor.out_channels):
             """Create RetinaNet Subnet Heads 
             weight_style: regression => initializes regression focal style weights
@@ -82,37 +85,20 @@ class RetinaNet(nn.Module):
             weight_style: default => initializes default SSD style weights"""
 
             reg_channels: Tuple[int, int] = out_channel, num_boxes * 4
+            reg_head_weight_style = "default"
+
             cls_channels: Tuple[int, int] = out_channel, num_boxes * self.num_classes
+            cls_head_weight_style = "classification" if self.use_weightstyle else "default"
 
             if self.use_deeper_head:
-
-                reg_head_weight_style = "default"
-                cls_head_weight_style = "default"
-
-                if self.use_weightstyle:
-                    cls_head_weight_style = "classification"
-
-                # 5-LAYER
-                reg_head = create_subnet(*reg_channels, head_weight_style = reg_head_weight_style).to(self.device)
-                cls_head = create_subnet(*cls_channels, head_weight_style = cls_head_weight_style).to(self.device)
+                reg_net = create_subnet(*reg_channels, head_weight_style = reg_head_weight_style)
+                cls_net = create_subnet(*cls_channels, head_weight_style = cls_head_weight_style)
             else:
-                # 1-LAYER
-                # TODO: create func for single-layer subnets which returns sequentials
-                reg_conv = nn.Conv2d(*reg_channels, kernel_size=3, padding=1)
-                cls_conv = nn.Conv2d(*cls_channels, kernel_size=3, padding=1)
-                nn.init.xavier_uniform_(reg_conv.weight)
-                nn.init.xavier_uniform_(cls_conv.weight)
-                rtmp.append(reg_conv)
-                ctmp.append(cls_conv)
-                reg_head = nn.Sequential(reg_conv).to(self.device)
-                cls_head = nn.Sequential(cls_conv).to(self.device)
-
-            self.regression_heads.append(reg_head)
-            self.classification_heads.append(cls_head)
-        
-
-        print(f"Regression heads = {len(rtmp)}: {rtmp}")
-        print(f"Classification heads = {len(ctmp)}: {ctmp}")
+                reg_net = create_singlenet(*reg_channels, head_weight_style = "default")
+                cls_net = create_singlenet(*cls_channels, head_weight_style = "default")
+               
+            self.regression_heads.append(reg_net.to(self.device))
+            self.classification_heads.append(cls_net.to(self.device))
 
     def regress_boxes(self, features):
         locations = []

@@ -23,7 +23,7 @@ torch.backends.cudnn.benchmark = True
 
 def main():
     evaluate_only = False
-    path = Path("neuralvision/configs/retinanet_1.py")
+    path = Path("neuralvision/configs/retinanet_4.py")
     cfg = load_config(path)
     print_config(cfg)
 
@@ -37,6 +37,8 @@ def main():
     cocoGt = dataloader_val.dataset.get_annotations_as_coco()
 
     model = torch_utils.to_cuda(instantiate(cfg.model))
+
+    print(sum(p.numel() for p in model.parameters()))
 
     optimizer = instantiate(cfg.optimizer, params=tencent_trick(model))
 
