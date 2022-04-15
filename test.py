@@ -23,7 +23,7 @@ torch.backends.cudnn.benchmark = True
 
 def main():
     evaluate_only = False
-    path = Path("neuralvision/configs/retinanet_4.py")
+    path = Path("neuralvision/configs/retinanet_0.py")
     cfg = load_config(path)
     print_config(cfg)
 
