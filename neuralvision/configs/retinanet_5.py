@@ -27,6 +27,7 @@ backbone = L(ResnetFPN)(
     image_channels = "${train.image_channels}",
     output_feature_sizes = "${anchors.feature_sizes}",
 )
+loss_objective = L(SSDMultiboxLoss)(anchors="${anchors}")
 
 model = L(RetinaNet)(
     feature_extractor="${backbone}",
@@ -37,7 +38,6 @@ model = L(RetinaNet)(
     use_weightstyle=False
 )
 
-loss_objective = L(SSDMultiboxLoss)(anchors="${anchors}")
 
 train_cpu_transform = L(torchvision.transforms.Compose)(
     transforms=[

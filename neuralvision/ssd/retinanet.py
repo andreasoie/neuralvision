@@ -6,52 +6,64 @@ from .anchor_encoder import AnchorEncoder
 from torchvision.ops import batched_nms
 
 
-def apply_weight_init(param, weight_style: str):
+def apply_weight_init(param, weight_style: str, num_anchors: int, num_classes: int): 
     assert isinstance(param, torch.nn.modules.conv.Conv2d)
-    _SIGMA, _CONF = 0.01, 0.01
+    PRIOR_PROB = torch.tensor(0.01)
+    SIGMA = torch.tensor(0.01)
+
     if weight_style == "default":
         # Seee SSD paper
         nn.init.xavier_uniform_(param.weight)
         # the bias is zero I assume
+
     elif weight_style == "classification":
-        # See Focal Loss paper
-        torch.nn.init.normal_(param.weight, std=_SIGMA)
-        torch.nn.init.constant_(param.bias, -math.log((1 - _CONF) / _CONF))
+        # Initialize all classes to have bias of 0
+        custom_bias = torch.zeros((num_classes, 1), dtype=torch.float32)
+        """ Focal   Method: torch.log((num_classes - 1) * (1 - PRIOR_PROB) / (PRIOR_PROB))"""
+        """ TDT4265 Method: torch.log(PRIOR_PROB * ((num_classes - 1) / (1 - PRIOR_PROB)))"""
+        # Except for background class:
+        custom_bias[0] = torch.log(PRIOR_PROB * ((num_classes - 1) / (1 - PRIOR_PROB)))   
+        # Repeat foreach anchor
+        custom_bias = torch.vstack([custom_bias]*num_anchors)
+        # Update weights and biases
+        torch.nn.init.normal_(param.weight, std=SIGMA.item())
+        param.bias.data = custom_bias.squeeze()
+
     elif weight_style == "regression":
         # See Focal Loss paper
-        torch.nn.init.normal_(param.weight, std=_SIGMA)
+        torch.nn.init.normal_(param.weight, std=SIGMA.item())
         torch.nn.init.zeros_(param.bias)
     else:
         raise NotImplementedError(f"Unknown weight_style: {weight_style}")
 
-def create_subnet_stem(channels: int, weight_style: str) -> nn.Sequential:
+def create_subnet_stem(channels: int, weight_style: str, num_anchors: int, num_classes: int) -> nn.Sequential:
     """ initializes the RetinaNet stem-subnetworks """
     layers = []
     for _ in range(4):
         _conv = nn.Conv2d(channels, channels, kernel_size=3, stride=1, padding=1)
         _relu = nn.ReLU(inplace=True)
-        apply_weight_init(_conv, weight_style)
+        apply_weight_init(_conv, weight_style, num_anchors, num_classes)
         layers.append(_conv)
         layers.append(_relu)
     return nn.Sequential(*layers)
 
-def create_subnet_head(in_chan: int, out_chan: int, weight_style: str) -> nn.Conv2d:
+def create_subnet_head(in_chan: int, out_chan: int, weight_style: str, num_anchors: int, num_classes: int) -> nn.Conv2d:
     stem_head = nn.Conv2d(in_chan, out_chan, kernel_size=3, stride=1, padding=1)
-    apply_weight_init(stem_head, weight_style)
+    apply_weight_init(stem_head, weight_style, num_anchors, num_classes)
     return stem_head
 
-def create_subnet(in_chan: int, out_chan: int, head_weight_style: str = "default") -> nn.Sequential:
+def create_subnet(in_chan: int, out_chan: int, head_weight_style, num_anchors: int, num_classes: int) -> nn.Sequential:
     stem_weight_style = "default" # Don't change focal init I guess (default => SSD)
     # build subnet stem with initialized weights
-    stem = create_subnet_stem(in_chan, stem_weight_style)
+    stem = create_subnet_stem(in_chan, stem_weight_style, num_anchors, num_classes)
     # build subnet head with initialized weights
-    head = create_subnet_head(in_chan, out_chan, head_weight_style)
+    head = create_subnet_head(in_chan, out_chan, head_weight_style, num_anchors, num_classes)
     stem.add_module("convhead", head)
     return stem
 
-def create_singlenet(in_chan: int, out_chan: int, head_weight_style: str = "default") -> nn.Sequential:
+def create_singlenet(in_chan: int, out_chan: int, head_weight_style, num_anchors: int, num_classes: int) -> nn.Sequential:
     conv = nn.Conv2d(in_chan, out_chan, kernel_size=3, stride=1, padding=1)
-    apply_weight_init(conv, head_weight_style)
+    apply_weight_init(conv, head_weight_style, num_anchors, num_classes)
     return nn.Sequential(conv)
 
 
@@ -69,11 +81,11 @@ class RetinaNet(nn.Module):
         self.anchor_encoder = AnchorEncoder(anchors)
         self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
-        # TODO: Refactor below to separate func or similar
+        # TODO: Refactor
         assert all(x==anchors.num_boxes_per_fmap[0] for x in anchors.num_boxes_per_fmap), "All elements must be equal"
         assert all(x==self.feature_extractor.out_channels[0] for x in self.feature_extractor.out_channels), "All elements must be equal"
         
-        # Get channel sizes. Its constant for all, so only need to get it once
+        # Get channel sizes. Constant for all, so only need to get it once
         num_boxes, out_channel = anchors.num_boxes_per_fmap[0], self.feature_extractor.out_channels[0]
         reg_channels: Tuple[int, int] = out_channel, num_boxes * 4
         cls_channels: Tuple[int, int] = out_channel, num_boxes * self.num_classes
@@ -82,15 +94,11 @@ class RetinaNet(nn.Module):
         cls_head_weight_style = "classification" if self.use_weightstyle else "default"
 
         if self.use_deeper_head:
-            reg_net = create_subnet(*reg_channels, head_weight_style = reg_head_weight_style)
-            cls_net = create_subnet(*cls_channels, head_weight_style = cls_head_weight_style)
+            self.regression_heads = create_subnet(*reg_channels, reg_head_weight_style, num_boxes, self.num_classes)
+            self.classification_heads = create_subnet(*cls_channels, cls_head_weight_style, num_boxes, self.num_classes)
         else:
-            reg_net = create_singlenet(*reg_channels, head_weight_style = reg_head_weight_style)
-            cls_net = create_singlenet(*cls_channels, head_weight_style = reg_head_weight_style)
-        
-        self.regression_heads = reg_net    
-        self.classification_heads = cls_net
-
+            self.regression_heads = create_singlenet(*reg_channels, reg_head_weight_style, num_boxes, self.num_classes)
+            self.classification_heads = create_singlenet(*cls_channels, reg_head_weight_style, num_boxes, self.num_classes)
             
         """
         Initialize output heads that are applied
@@ -121,7 +129,6 @@ class RetinaNet(nn.Module):
         #         cls_net = create_singlenet(*cls_channels, head_weight_style = "default")
                
         #     print(f"cls_net: {cls_net}")
-
 
         #     self.regression_heads.append(reg_net.to(self.device))
         #     self.classification_heads.append(cls_net.to(self.device))

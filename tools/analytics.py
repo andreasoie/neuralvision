@@ -236,7 +236,7 @@ def convert_scalar_to_metrics_loss(scalar_path: Union[Path, str]) -> pd.DataFram
 def vizualize_metrics(
     metric_frame: pd.DataFrame, metric_types: List[str], axis_cfg: dict
 ) -> None:
-    plt.figure(figsize=(6, 2), dpi=1200)
+    plt.figure(figsize=(8, 2), dpi=1200)
     for metric_type in metric_types:
         plt.plot(
             metric_frame["global_step"],
@@ -255,11 +255,31 @@ def vizualize_metrics(
     plt.legend()
     plt.show()
 
+def multi_vizualize_metric(names: List[str], metric_frames: List[pd.DataFrame], metric_type: str, axis_cfg: dict) -> None:
+    plt.figure(figsize=(8, 2), dpi=1200)
+    for label, metric_frame in zip(names, metric_frames):
+        plt.plot(
+            metric_frame["global_step"],
+            metric_frame[metric_type],
+            label=label,
+        )
+    # Scale axis if needed
+    if axis_cfg is not None:
+        if axis_cfg["x"] is not None:
+            plt.xlim(axis_cfg["x"][0], axis_cfg["x"][1])
+        if axis_cfg["y"] is not None:
+            plt.ylim(axis_cfg["y"][0], axis_cfg["y"][1])
+    plt.xlabel("Global Steps", fontsize=8)
+    plt.ylabel("(Mean) Average Precision", fontsize=8)
+    plt.title(f"Metric: {metric_type}")
+    plt.legend(loc="lower right")
+    plt.show()
+
 
 def vizualize_loss(
     loss_frame: pd.DataFrame, loss_types: List[str], axis_cfg: dict = None
 ) -> None:
-    plt.figure(figsize=(6, 2), dpi=1200)
+    plt.figure(figsize=(8, 2), dpi=1200)
     for loss_type in loss_types:
         plt.plot(
             loss_frame["global_step"],
