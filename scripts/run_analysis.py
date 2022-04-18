@@ -43,7 +43,7 @@ def evaluation(cfg, N_images: int):
 @click.argument(
     "config_path", type=click.Path(exists=True, dir_okay=False, path_type=Path)
 )
-@click.option("-n", "--n-images", default=100, type=int)
+@click.option("-n", "--n-images", default=500, type=int)
 def main(config_path: Path, n_images: int):
     cfg = load_config(config_path)
     evaluation(cfg, n_images)

@@ -33,6 +33,7 @@ train_cpu_transform = L(torchvision.transforms.Compose)(
     transforms=[
         L(ToTensor)(),
         L(Resize)(imshape="${train.imshape}"),
+        L(RandomHorizontalFlip)(),
         L(GroundTruthBoxesToAnchors)(anchors="${anchors}", iou_threshold=0.5),
     ]
 )

@@ -5,7 +5,7 @@ from neuralvision.datasets_classes.tdt4265_dataset import TDT4265Dataset
 from neuralvision.tops.config.lazy import LazyCall as L
 from neuralvision.transforms.gpu_transforms import ColorJitter, Normalize
 from neuralvision.transforms.target_transform import GroundTruthBoxesToAnchors
-from neuralvision.transforms.transform import RandomHorizontalFlip, Resize, ToTensor
+from neuralvision.transforms.transform import RandomHorizontalFlip, RandomSampleCrop, Resize, ToTensor
 
 from neuralvision.configs.dir_utils import get_dataset_dir
 
@@ -31,8 +31,10 @@ model.num_classes = 8 + 1  # Add 1 for background class
 
 train_cpu_transform = L(torchvision.transforms.Compose)(
     transforms=[
+        L(RandomSampleCrop)(),
         L(ToTensor)(),
         L(Resize)(imshape="${train.imshape}"),
+        L(RandomHorizontalFlip)(),
         L(GroundTruthBoxesToAnchors)(anchors="${anchors}", iou_threshold=0.5),
     ]
 )
@@ -44,7 +46,6 @@ val_cpu_transform = L(torchvision.transforms.Compose)(
 )
 train_gpu_transform = L(torchvision.transforms.Compose)(
     transforms=[
-        L(ColorJitter)(brightness=0.1, contrast=0.1, saturation=0.1),
         L(Normalize)(mean=[0.4765, 0.4774, 0.2259], std=[0.2951, 0.2864, 0.2878]),
     ]
 )

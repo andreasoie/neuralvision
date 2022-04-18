@@ -18,12 +18,12 @@ from omegaconf.dictconfig import DictConfig
 from PIL import Image, ImageFont
 from vizer.draw import draw_boxes
 
-# plt.style.use(["science", "ieee"])
+plt.style.use(["science"]) # ieee
 
-plt.rcParams["text.usetex"] = True
-sns.set_style("whitegrid")
-sns.set_context("paper")
-sns.color_palette("rocket", as_cmap=True)
+# plt.rcParams["text.usetex"] = True
+# sns.set_style("whitegrid")
+# sns.set_context("paper")
+# sns.color_palette("rocket", as_cmap=True)
 
 
 def get_config(config_path: str, batch_size: int = 1):
@@ -257,6 +257,7 @@ def vizualize_metrics(
 
 def multi_vizualize_metric(names: List[str], metric_frames: List[pd.DataFrame], metric_type: str, axis_cfg: dict) -> None:
     plt.figure(figsize=(8, 2), dpi=1200)
+    # plt.figure(figsize=(8, 2))
     for label, metric_frame in zip(names, metric_frames):
         plt.plot(
             metric_frame["global_step"],
