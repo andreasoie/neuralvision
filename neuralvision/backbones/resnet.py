@@ -22,6 +22,11 @@ class ResNetConfig:
         conv4_block1.conv1.stride = (1, 1)
         conv4_block1.conv2.stride = (1, 1)
         conv4_block1.downsample[0].stride = (1, 1)
+
+        # Testing freezing
+        for param in layers.parameters():
+            param.requires_grad = False
+
         return layers
 
     def init_custom_heads(self) -> nn.ModuleList:
