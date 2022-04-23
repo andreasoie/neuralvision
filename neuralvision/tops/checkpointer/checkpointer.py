@@ -19,6 +19,7 @@ def load_checkpoint(
     checkpoint_path: Optional[os.PathLike] = None,
     load_best: bool = False,
     map_location=None,
+    do_sysout=True,
 ) -> dict:
     if map_location is None:
         map_location = "cuda:0" if torch.cuda.is_available() else "cpu"
@@ -32,7 +33,8 @@ def load_checkpoint(
     checkpoint_path = pathlib.Path(checkpoint_path)
     if checkpoint_path.is_file():
         ckpt = torch.load(checkpoint_path, map_location=map_location)
-        log(f"Loaded checkpoint from {checkpoint_path}")
+        if do_sysout:
+            log(f"Loaded checkpoint from {checkpoint_path}")
         return ckpt
     checkpoint_dir = checkpoint_path
     if load_best:
@@ -51,7 +53,8 @@ def load_checkpoint(
     if not checkpoint_path.is_file():
         raise FileNotFoundError(f"Did not find file: {checkpoint_path}")
     ckpt = torch.load(checkpoint_path, map_location=map_location)
-    log(f"Loaded checkpoint from {checkpoint_path}")
+    if do_sysout:
+        log(f"Loaded checkpoint from {checkpoint_path}")
     return ckpt
 
 

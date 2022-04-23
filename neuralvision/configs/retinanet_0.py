@@ -11,8 +11,17 @@ from neuralvision.transforms.target_transform import GroundTruthBoxesToAnchors
 from neuralvision.transforms.transform import Resize, ToTensor
 
 # absolute import causes issues, using relative imports
-from .ssd300 import (anchors, backbone, data_train, data_val, loss_objective,
-                     model, optimizer, schedulers, train)
+from .template.ssd300 import (
+    anchors,
+    backbone,
+    data_train,
+    data_val,
+    loss_objective,
+    model,
+    optimizer,
+    schedulers,
+    train,
+)
 
 TDT4265_DATASET_DIR = "datasets/tdt4265"
 
@@ -22,10 +31,10 @@ train.image_channels = 3  # type: ignore
 anchors.aspect_ratios = [[2, 3], [2, 3], [2, 3], [2, 3], [2, 3], [2, 3]]
 NUM_CLASSES = 8 + 1  # Add 1 for background
 
-backbone = L(ResnetFPN)( 
-    output_channels = [128, 256, 128, 128, 64, 64],
-    image_channels = "${train.image_channels}",
-    output_feature_sizes = "${anchors.feature_sizes}",
+backbone = L(ResnetFPN)(
+    output_channels=[128, 256, 128, 128, 64, 64],
+    image_channels="${train.image_channels}",
+    output_feature_sizes="${anchors.feature_sizes}",
 )
 
 model = L(RetinaNet)(
@@ -34,10 +43,12 @@ model = L(RetinaNet)(
     loss_objective="${loss_objective}",
     num_classes=NUM_CLASSES,  # Add 1 for background
     use_deeper_head=False,
-    use_weightstyle=False
+    use_weightstyle=False,
 )
 
-loss_objective = L(FocalLoss)(anchors="${anchors}", alphas=[0.01, *[1]*(NUM_CLASSES - 1)])
+loss_objective = L(FocalLoss)(
+    anchors="${anchors}", alphas=[0.01, *[1] * (NUM_CLASSES - 1)]
+)
 
 train_cpu_transform = L(torchvision.transforms.Compose)(
     transforms=[

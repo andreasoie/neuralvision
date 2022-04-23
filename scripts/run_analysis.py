@@ -11,12 +11,14 @@ from neuralvision.helpers import load_config
 
 
 @torch.no_grad()
-def evaluation(cfg, N_images: int):
+def evaluation(cfg, N_images: int, do_sysout: bool = True):
     model = instantiate(cfg.model)
     model.eval()
     model = to_cuda(model)
     ckpt = load_checkpoint(
-        cfg.output_dir.joinpath("checkpoints"), map_location=get_device()
+        cfg.output_dir.joinpath("checkpoints"),
+        map_location=get_device(),
+        do_sysout=do_sysout,
     )
     model.load_state_dict(ckpt["model"])
     dataloader_val = instantiate(cfg.data_val.dataloader)
@@ -27,16 +29,17 @@ def evaluation(cfg, N_images: int):
     images = batch["image"]
     imshape = list(images.shape[2:])
     # warmup
-    print("Checking runtime for image shape:", imshape)
     for i in range(10):
         model(images)
     start_time = time.time()
     for i in range(N_images):
-        outputs = model(images)
+        _ = model(images)
     total_time = time.time() - start_time
-    print("Runtime for image shape:", imshape)
-    print("Total runtime:", total_time)
-    print("FPS:", N_images / total_time)
+
+    _name = cfg["run_name"]
+    print(
+        f" \n {_name} | {N_images / total_time} images/sec | {total_time} runtime (s)"
+    )
 
 
 @click.command()
@@ -45,8 +48,9 @@ def evaluation(cfg, N_images: int):
 )
 @click.option("-n", "--n-images", default=500, type=int)
 def main(config_path: Path, n_images: int):
-    cfg = load_config(config_path)
-    evaluation(cfg, n_images)
+    do_sysout = False
+    cfg = load_config(config_path, do_sysout)
+    evaluation(cfg, n_images, do_sysout)
 
 
 if __name__ == "__main__":

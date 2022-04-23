@@ -9,6 +9,7 @@ import click
 import torch
 import tqdm
 from torch.optim.lr_scheduler import ChainedScheduler
+import argparse
 
 from neuralvision.evaluate import evaluate
 from neuralvision.helpers import load_config, tencent_trick
@@ -20,12 +21,17 @@ from neuralvision.tops.misc import print_module_summary, print_config
 
 torch.backends.cudnn.benchmark = True
 
+arg = argparse.ArgumentParser()
+arg.add_argument("--cfg", type=str, default="ssd300.py")
+ags = arg.parse_args()
+
 
 def main():
     evaluate_only = False
-    path = Path("neuralvision/configs/retina_A.py")
+    path = Path(ags.cfg)
     cfg = load_config(path)
-    print_config(cfg)
+    # print_config(cfg)
+    print(ags.cfg, sep=" ")
 
     build.init(cfg.output_dir)
     torch_utils.set_AMP(cfg.train.amp)

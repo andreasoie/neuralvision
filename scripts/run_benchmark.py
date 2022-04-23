@@ -33,7 +33,7 @@ def main(config_path):
     elapsed_time = time.perf_counter() - start_time
     images_per_sec = round(n_images / elapsed_time, 3)
     cfg_name = str(config_path).split("/")[-1]
-    print(f"{cfg_name} --- {images_per_sec} images/sec (data-pipeline runtime)")
+    print(f" {cfg_name} --- {images_per_sec} images/sec (data-pipeline runtime)")
 
 
 if __name__ == "__main__":

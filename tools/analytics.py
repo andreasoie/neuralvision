@@ -18,7 +18,7 @@ from omegaconf.dictconfig import DictConfig
 from PIL import Image, ImageFont
 from vizer.draw import draw_boxes
 
-plt.style.use(["science"]) # ieee
+plt.style.use(["science"])  # ieee
 
 # plt.rcParams["text.usetex"] = True
 # sns.set_style("whitegrid")
@@ -252,11 +252,17 @@ def vizualize_metrics(
     plt.xlabel("Global Steps", fontsize=8)
     plt.ylabel("(Mean) Average Precision", fontsize=8)
     plt.title("Metric: (m)AP")
-    plt.legend()
+    plt.legend(loc="best")
     plt.show()
 
-def multi_vizualize_metric(names: List[str], metric_frames: List[pd.DataFrame], metric_type: str, axis_cfg: dict) -> None:
-    plt.figure(figsize=(8, 2), dpi=1200)
+
+def multi_vizualize_metric(
+    names: List[str],
+    metric_frames: List[pd.DataFrame],
+    metric_type: str,
+    axis_cfg: dict,
+) -> None:
+    plt.figure(figsize=(8, 3), dpi=1200)
     # plt.figure(figsize=(8, 2))
     for label, metric_frame in zip(names, metric_frames):
         plt.plot(
@@ -273,8 +279,54 @@ def multi_vizualize_metric(names: List[str], metric_frames: List[pd.DataFrame], 
     plt.xlabel("Global Steps", fontsize=8)
     plt.ylabel("(Mean) Average Precision", fontsize=8)
     plt.title(f"Metric: {metric_type}")
-    plt.legend(loc="lower right")
+    plt.legend(loc="best")
     plt.show()
+
+
+def multi_vizualize_loss(
+    names: List[str], loss_scalers: List[pd.DataFrame], axis_cfg: dict
+):
+    fig, (ax0, ax1, ax2) = plt.subplots(
+        nrows=1, ncols=3, sharex=True, figsize=(12, 6), dpi=1200
+    )
+    for i, (name, loss_scaler) in enumerate(zip(names, loss_scalers)):
+        ax0.set_title("Total loss")
+        ax0.plot(
+            loss_scaler["global_step"],
+            loss_scaler["loss/total_loss"],
+            label=name,
+        )
+        ax0.legend(loc="best")
+        ax0.set_xlabel("Global Steps")
+        ax1.set_title("Classification loss")
+        ax1.plot(
+            loss_scaler["global_step"],
+            loss_scaler["loss/classification_loss"],
+            label=name,
+        )
+        ax1.legend(loc="best")
+        ax1.set_xlabel("Global Steps")
+        ax2.set_title("Reggression loss")
+        ax2.plot(
+            loss_scaler["global_step"],
+            loss_scaler["loss/regression_loss"],
+            label=name,
+        )
+        ax2.legend(loc="best")
+        ax2.set_xlabel("Global Steps")
+
+        if axis_cfg is not None:
+            if axis_cfg["x"] is not None:
+                xmin, xmax = axis_cfg["x"]
+                ax0.set_xlim(xmin, xmax)
+                ax1.set_xlim(xmin, xmax)
+                ax2.set_xlim(xmin, xmax)
+            if axis_cfg["y"] is not None:
+                ymin, ymax = axis_cfg["y"]
+                ax0.set_ylim(ymin, ymax)
+                ax1.set_ylim(ymin, ymax)
+                ax2.set_ylim(ymin, ymax)
+    fig.show()
 
 
 def vizualize_loss(
@@ -299,7 +351,7 @@ def vizualize_loss(
     plt.yticks
     plt.title("Metric: Loss")
 
-    plt.legend()
+    plt.legend(loc="best")
     plt.show()
 
 

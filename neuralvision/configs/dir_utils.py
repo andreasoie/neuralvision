@@ -37,5 +37,5 @@ def get_output_dir():
                     in the function get_output_dir."
             )
 
-    print("Saving SSD outputs to: outputs/")
+    # print("Saving SSD outputs to: outputs/")
     return pathlib.Path("outputs")

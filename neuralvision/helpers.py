@@ -10,16 +10,18 @@ from neuralvision.tops.config.lazy import LazyConfig
 from omegaconf import DictConfig, ListConfig, OmegaConf
 
 
-def load_config(config_path: PathLike) -> DictConfig:
+def load_config(config_path: PathLike, do_sysout: bool = True) -> DictConfig:
     config_path = Path(config_path)
-    print(f"Loading config from: {config_path}")
+    if do_sysout:
+        print(f"Loading config from: {config_path}")
     run_name = "_".join(config_path.parts[1:-1]) + "_" + config_path.stem
     cfg = LazyConfig.load(str(config_path))
     cfg.output_dir = Path(cfg.train._output_dir).joinpath(
         *config_path.parts[1:-1], config_path.stem
     )
     cfg.run_name = run_name
-    print("--" * 40)
+    if do_sysout:
+        print("--" * 40)
     return cfg
 
 

@@ -12,8 +12,17 @@ from neuralvision.transforms.target_transform import GroundTruthBoxesToAnchors
 from neuralvision.transforms.transform import Resize, ToTensor
 
 # absolute import causes issues, using relative imports
-from .ssd300 import (anchors, backbone, data_train, data_val, loss_objective,
-                     model, optimizer, schedulers, train)
+from .template.ssd300 import (
+    anchors,
+    backbone,
+    data_train,
+    data_val,
+    loss_objective,
+    model,
+    optimizer,
+    schedulers,
+    train,
+)
 
 TDT4265_DATASET_DIR = "datasets/tdt4265"
 
@@ -22,10 +31,10 @@ train.imshape = (128, 1024)  # type: ignore
 train.image_channels = 3  # type: ignore
 NUM_CLASSES = 8 + 1  # Add 1 for background
 
-backbone = L(ResnetFPN)( 
-    output_channels = [128, 256, 128, 128, 64, 64],
-    image_channels = "${train.image_channels}",
-    output_feature_sizes = "${anchors.feature_sizes}",
+backbone = L(ResnetFPN)(
+    output_channels=[128, 256, 128, 128, 64, 64],
+    image_channels="${train.image_channels}",
+    output_feature_sizes="${anchors.feature_sizes}",
 )
 
 loss_objective = L(SSDMultiboxLoss)(anchors="${anchors}")
@@ -34,9 +43,9 @@ model = L(RetinaNet)(
     feature_extractor="${backbone}",
     anchors="${anchors}",
     loss_objective="${loss_objective}",
-    num_classes=NUM_CLASSES, 
+    num_classes=NUM_CLASSES,
     use_deeper_head=False,
-    use_weightstyle=False
+    use_weightstyle=False,
 )
 
 train_cpu_transform = L(torchvision.transforms.Compose)(

@@ -14,7 +14,7 @@ from neuralvision.transforms.transform import (
 )
 
 # absolute import causes issues, using relative imports
-from .ssd300 import (
+from .template.ssd300 import (
     anchors,
     backbone,
     data_train,
