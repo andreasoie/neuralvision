@@ -41,7 +41,7 @@ class AnchorBoxes(object):
         # size of feature and number of feature
         for fidx, [fH, fW] in enumerate(feature_sizes):
             bbox_sizes = []
-            h_min = min_sizes[fidx][0] / image_shape[0]
+            h_min = min_sizes[fidx][0] / image_shape[0]  #
             w_min = min_sizes[fidx][1] / image_shape[1]
             bbox_sizes.append((w_min, h_min))
             h_max = sqrt(min_sizes[fidx][0] * min_sizes[fidx + 1][0]) / image_shape[0]
@@ -50,8 +50,8 @@ class AnchorBoxes(object):
             for r in aspect_ratios[fidx]:
                 h = h_min * sqrt(r)
                 w = w_min / sqrt(r)
-                bbox_sizes.append((h_min * sqrt(r), w_min / sqrt(r)))
-                bbox_sizes.append((h_min / sqrt(r), w_min * sqrt(r)))
+                bbox_sizes.append((w_min / sqrt(r), h_min * sqrt(r)))
+                bbox_sizes.append((w_min * sqrt(r), h_min / sqrt(r)))
             scale_y = image_shape[0] / strides[fidx][0]
             scale_x = image_shape[1] / strides[fidx][1]
             for w, h in bbox_sizes:
@@ -62,6 +62,16 @@ class AnchorBoxes(object):
                         anchors.append((cx, cy, w, h))
 
         self.anchors_xywh = torch.tensor(anchors).clamp(min=0, max=1).float()
+        # Get 10 random numbers
+        # rand_numbers = torch.randint(0, len(self.anchors_xywh), (10,))
+        # for i in rand_numbers.tolist():
+        #     cx, cy, w, h = self.anchors_xywh[i].tolist()
+        #     Tcx, Tcy, Tw, Th = cx * 1024, cy * 128, w * 1024, h * 128
+
+        #     print(f" \n Example {i}")
+        #     print(f"{Tw = }")
+        #     print(f"{Th = }")
+
         self.anchors_ltrb = self.anchors_xywh.clone()
         self.anchors_ltrb[:, 0] = (
             self.anchors_xywh[:, 0] - 0.5 * self.anchors_xywh[:, 2]
