@@ -62,7 +62,7 @@ class AnchorBoxes(object):
                         anchors.append((cx, cy, w, h))
 
         self.anchors_xywh = torch.tensor(anchors).clamp(min=0, max=1).float()
-        # Get 10 random numbers
+        # Get 3 randoms
         # rand_numbers = torch.randint(0, len(self.anchors_xywh), (10,))
         # for i in rand_numbers.tolist():
         #     cx, cy, w, h = self.anchors_xywh[i].tolist()

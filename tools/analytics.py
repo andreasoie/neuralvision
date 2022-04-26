@@ -15,6 +15,7 @@ from neuralvision.tops.config.instantiate import instantiate
 from neuralvision.tops.config.lazy import LazyConfig
 from omegaconf import OmegaConf
 from omegaconf.dictconfig import DictConfig
+from pandas.api.types import is_numeric_dtype
 from PIL import Image, ImageFont
 from vizer.draw import draw_boxes
 
@@ -85,6 +86,17 @@ def get_category_metrics(category_ids: pd.DataFrame, decimals: float = 2) -> Non
     return label_distribution
 
 
+def remove_outliers(df: pd.DataFrame) -> pd.DataFrame:
+    for col in df.columns:
+        if is_numeric_dtype(df[col]):
+            percentiles = df[col].quantile([0.01, 0.99]).values
+            df[col][df[col] <= percentiles[0]] = percentiles[0]
+            df[col][df[col] >= percentiles[1]] = percentiles[1]
+        else:
+            df[col] = df[col]
+    return df
+
+
 def process_annotations(loaded_annotations: List[dict]) -> pd.DataFrame:
     cleaned_annotations = []
     for annotation in loaded_annotations:
@@ -135,7 +147,7 @@ def load_annotation_file(cfg: OmegaConf, set_type: str) -> Union[Dict, None]:
 def get_avg_box_metrics(
     annotations: pd.DataFrame, unique_catagories: List[str]
 ) -> pd.DataFrame:
-    table = {"dimension": ["area", "aspect", "width", "height"]}
+    table = {"type": ["area", "aspect", "width", "height"]}
     for category in unique_catagories:
         table[category] = _get_avg_box_metric(annotations, category)
     return pd.DataFrame(table)
@@ -195,7 +207,7 @@ def view_aspect_ratio_distribution(cleaned_annotations: pd.DataFrame) -> None:
 
     mean_aspect = aspects.mean().round(2)
 
-    plt.figure(dpi=120)
+    plt.figure(figsize=(8, 2), dpi=1200)
     sns.histplot(aspects)
     plt.axvline(q_low, color="r", linestyle="--", label="1\\% quantile")
     plt.axvline(q_hi, color="r", linestyle="--", label="99\\% quantile")
@@ -262,7 +274,10 @@ def multi_vizualize_metric(
     metric_type: str,
     axis_cfg: dict,
 ) -> None:
-    plt.figure(figsize=(8, 3), dpi=1200)
+    if axis_cfg["figsize"] is None:
+        plt.figure(figsize=(8, 3), dpi=1200)
+    else:
+        plt.figure(figsize=axis_cfg["figsize"], dpi=1200)
     # plt.figure(figsize=(8, 2))
     for label, metric_frame in zip(names, metric_frames):
         plt.plot(
