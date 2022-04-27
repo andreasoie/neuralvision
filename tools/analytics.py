@@ -10,9 +10,9 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 import torch
-from neuralvision.helpers import batch_collate
-from neuralvision.tops.config.instantiate import instantiate
-from neuralvision.tops.config.lazy import LazyConfig
+from core.helpers import batch_collate
+from core.tops.config.instantiate import instantiate
+from core.tops.config.lazy import LazyConfig
 from omegaconf import OmegaConf
 from omegaconf.dictconfig import DictConfig
 from pandas.api.types import is_numeric_dtype

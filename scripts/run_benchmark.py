@@ -4,9 +4,9 @@ from pathlib import Path
 import click
 import numpy as np
 import torch
-from neuralvision.tops.config.instantiate import instantiate
-from neuralvision.tops.config.lazy import LazyConfig
-from neuralvision.tops.torch_utils import to_cuda
+from core.tops.config.instantiate import instantiate
+from core.tops.config.lazy import LazyConfig
+from core.tops.torch_utils import to_cuda
 
 np.random.seed(0)
 

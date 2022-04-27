@@ -4,10 +4,10 @@ import click
 import torch
 import tqdm
 
-from neuralvision.helpers import bbox_ltrb_to_ltwh, load_config
-from neuralvision.tops.checkpointer.checkpointer import load_checkpoint
-from neuralvision.tops.config.instantiate import instantiate
-from neuralvision.tops.torch_utils import AMP, get_device, to_cuda
+from core.helpers import bbox_ltrb_to_ltwh, load_config
+from core.tops.checkpointer.checkpointer import load_checkpoint
+from core.tops.config.instantiate import instantiate
+from core.tops.torch_utils import AMP, get_device, to_cuda
 
 
 @torch.no_grad()

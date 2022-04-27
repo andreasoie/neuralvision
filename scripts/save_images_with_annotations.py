@@ -2,9 +2,9 @@ import os
 
 import cv2
 import numpy as np
-from neuralvision.helpers import batch_collate
-from neuralvision.tops.config.instantiate import instantiate
-from neuralvision.tops.config.lazy import LazyConfig
+from core.helpers import batch_collate
+from core.tops.config.instantiate import instantiate
+from core.tops.config.lazy import LazyConfig
 from tqdm import tqdm
 from vizer.draw import draw_boxes
 

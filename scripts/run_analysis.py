@@ -4,10 +4,10 @@ from pathlib import Path
 import click
 import torch
 
-from neuralvision.tops.torch_utils import get_device, to_cuda
-from neuralvision.tops.checkpointer.checkpointer import load_checkpoint
-from neuralvision.tops.config.instantiate import instantiate
-from neuralvision.helpers import load_config
+from core.tops.torch_utils import get_device, to_cuda
+from core.tops.checkpointer.checkpointer import load_checkpoint
+from core.tops.config.instantiate import instantiate
+from core.helpers import load_config
 
 
 @torch.no_grad()

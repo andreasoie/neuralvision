@@ -11,13 +11,13 @@ import tqdm
 from torch.optim.lr_scheduler import ChainedScheduler
 import argparse
 
-from neuralvision.evaluate import evaluate
-from neuralvision.helpers import load_config, tencent_trick
-from neuralvision.tops import build, torch_utils
-from neuralvision.tops.checkpointer import checkpointer
-from neuralvision.tops.config.instantiate import instantiate
-from neuralvision.tops.logger import logger
-from neuralvision.tops.misc import print_module_summary, print_config
+from core.evaluate import evaluate
+from core.helpers import load_config, tencent_trick
+from core.tops import build, torch_utils
+from core.tops.checkpointer import checkpointer
+from core.tops.config.instantiate import instantiate
+from core.tops.logger import logger
+from core.tops.misc import print_module_summary, print_config
 
 torch.backends.cudnn.benchmark = True
 

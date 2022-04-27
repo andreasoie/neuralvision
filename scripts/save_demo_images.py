@@ -4,10 +4,10 @@ import click
 import numpy as np
 import torch
 import tqdm
-from neuralvision.helpers import load_config
-from neuralvision.tops.checkpointer.checkpointer import load_checkpoint
-from neuralvision.tops.config.instantiate import instantiate
-from neuralvision.tops.torch_utils import get_device, to_cuda
+from core.helpers import load_config
+from core.tops.checkpointer.checkpointer import load_checkpoint
+from core.tops.config.instantiate import instantiate
+from core.tops.torch_utils import get_device, to_cuda
 from PIL import Image
 from vizer.draw import draw_boxes
 

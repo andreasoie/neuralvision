@@ -3,12 +3,12 @@ import os
 import click
 import cv2
 import numpy as np
-from neuralvision.helpers import batch_collate, load_config
-from neuralvision.tops.checkpointer.checkpointer import load_checkpoint
-from neuralvision.tops.config.instantiate import instantiate
-from neuralvision.tops.config.lazy import LazyCall as L
-from neuralvision.tops.torch_utils import get_device, to_cuda
-from neuralvision.transforms.transform import ToTensor
+from core.helpers import batch_collate, load_config
+from core.tops.checkpointer.checkpointer import load_checkpoint
+from core.tops.config.instantiate import instantiate
+from core.tops.config.lazy import LazyCall as L
+from core.tops.torch_utils import get_device, to_cuda
+from core.transforms.transform import ToTensor
 from tqdm import tqdm
 from vizer.draw import draw_boxes
 

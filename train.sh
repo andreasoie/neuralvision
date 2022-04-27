@@ -1,4 +1,4 @@
-python train.py neuralvision/configs/task24/retina_P1_0.py
+# python train.py neuralvision/configs/task24/retina_P1_0.py
 # python train.py neuralvision/configs/task24/retina_P1_1.py
 # python train.py neuralvision/configs/task24/retina_P1_2.py
 # python train.py neuralvision/configs/task24/retina_P1_3.py
