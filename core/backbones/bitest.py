@@ -152,9 +152,6 @@ class BiFPN(nn.Module):
     def forward(self, inputs):
         epsilon = 0.0001
         P3, P4, P5, P6, P7 = inputs
-        # print ("Input::", P3.shape, P4.shape, P5.shape, P6.shape, P7.shape)
-        # P6_td = self.p6_td_conv((self.p6_td_w1 * P6 ) /
-        #                         (self.p6_td_w1 + epsilon))
 
         P7_td = self.p7_out_conv(P7)
 
@@ -238,13 +235,19 @@ class BiFPN(nn.Module):
         return [P3_out, P4_out, P5_out, P6_out, P7_out]
 
 
-fpn = BiFPN([40, 112, 192, 192, 1280])
+cc = [256, 256, 256, 256, 256]
+fpn = BiFPN(cc)
 
-c1 = torch.randn([1, 40, 64, 64])
-c2 = torch.randn([1, 112, 32, 32])
-c3 = torch.randn([1, 192, 16, 16])
-c4 = torch.randn([1, 192, 16, 16])
-c5 = torch.randn([1, 1280, 16, 16])
+# output_channels=[128, 256, 128, 128, 64, 64],
+fc = ([[32, 256], [16, 128], [8, 64], [4, 32], [2, 16], [1, 8]],)
+
+c1 = torch.randn([1, cc[0], 64, 64])
+c2 = torch.randn([1, cc[1], 32, 32])
+c3 = torch.randn([1, cc[2], 32, 32])
+c4 = torch.randn([1, cc[3], 32, 32])
+c5 = torch.randn([1, cc[4], 32, 32])
 
 feats = [c1, c2, c3, c4, c5]
 output = fpn.forward(feats)
+for o in output:
+    print(o.shape)

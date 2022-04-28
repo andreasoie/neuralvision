@@ -127,6 +127,27 @@ def create_and_save_comparison_images(
         cv2.imwrite(filepath, comparison_image)
 
 
+def create_prediction_image(batch, model, img_transform, label_map, score_threshold):
+    image = convert_image_to_hwc_byte(batch["image"])
+
+    pred_image = to_cuda(batch["image"])
+    transformed_image = img_transform({"image": pred_image})["image"]
+
+    boxes, categories, scores = model(
+        transformed_image, score_threshold=score_threshold
+    )[0]
+    boxes = convert_boxes_coords_to_pixel_coords(
+        boxes.detach().cpu(), batch["width"], batch["height"]
+    )
+    categories = categories.cpu().numpy().tolist()
+
+    image_with_predicted_boxes = draw_boxes(
+        image, boxes, categories, scores, class_name_map=label_map
+    )
+    metainfo = {"boxes": boxes, "labels": categories, "scores": scores}
+    return image_with_predicted_boxes, metainfo
+
+
 def get_save_folder_name(cfg, dataset_to_visualize):
     return os.path.join(
         "saved_images/performance_assessment", cfg.run_name, dataset_to_visualize

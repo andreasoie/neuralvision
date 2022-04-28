@@ -47,34 +47,27 @@ class ResnetFPN(Module):
 
 def main():
 
-    from torchvision.models.detection import retinanet_resnet50_fpn
+    batch_size = 10
+    image_channels = 3
+    image_size = (128, 1024)
+    output_channels = [128, 256, 128, 128, 64, 64]
+    output_feature_sizes = [[32, 256], [16, 128], [8, 64], [4, 32], [2, 16], [1, 8]]
 
-    mod = retinanet_resnet50_fpn(num_classes=9)
+    test_img = rand(batch_size, image_channels, *image_size)
 
-    print("CLASS ", mod.head.classification_head.conv)
-    print("CLASS ", mod.head.classification_head.cls_logits)
-    print("REG   ", mod.head.regression_head.conv)
-    print("REG   ", mod.head.regression_head.bbox_reg)
+    retina = ResnetFPN(
+        output_channels=output_channels,
+        image_channels=image_channels,
+        output_feature_sizes=output_feature_sizes,
+    )
 
-    # batch_size = 10
-    # image_channels = 3
-    # image_size = (128, 1024)
-    # output_channels = [128, 256, 128, 128, 64, 64]
-    # output_feature_sizes = [[32, 256], [16, 128], [8, 64], [4, 32], [2, 16], [1, 8]]
+    features = retina(test_img)
 
-    # test_img = rand(batch_size, image_channels, *image_size)
-
-    # retina = RetinaNet(
-    #     output_channels=output_channels,
-    #     image_channels=image_channels,
-    #     output_feature_sizes=output_feature_sizes
-    # )
-
-    # features = retina(test_img)
-
+    for k, v in features.items():
+        print(k, v.shape)
     # for fet in features:
     #     print(fet.shape)
 
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())

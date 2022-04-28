@@ -54,6 +54,7 @@ class TDT4265Dataset(data.Dataset):
             img_id = bboxes["image_id"]
             bbox = bboxes["bbox"]
             bbox_label = self.label_map[bboxes["category_id"]]
+
             self.images[img_id][2].append((bbox, bbox_label))
 
         for k, v in list(self.images.items()):

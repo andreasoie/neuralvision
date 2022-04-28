@@ -131,3 +131,40 @@ def evaluate(
     }
 
     return dict(stats_all_objects, **class_ap_stats)
+
+
+@torch.no_grad()
+def do_single_eval(batch: dict, meta: dict, max_output: int = 200):
+    """
+    batch: dict with keys "image", "height", "width", "image_id"
+    meta: dict with keys "model", "tfms"
+    """
+    model = meta["model"]
+    tfms = meta["tfms"]
+
+    model.eval()
+
+    results = []
+    batch["image"] = torch_utils.to_cuda(batch["image"])
+    batch = tfms(batch)
+
+    with torch.cuda.amp.autocast(enabled=torch_utils.AMP()):
+        predictions = model(
+            batch["image"],
+            nms_iou_threshold=0.50,
+            max_output=max_output,
+            score_threshold=0.05,
+        )
+
+    for idx in range(len(predictions)):
+        boxes_ltrb, categories, scores = predictions[idx]
+        # ease-of-use for specific predictions
+        H, W = batch["height"][idx], batch["width"][idx]
+        box_ltwh = helpers.bbox_ltrb_to_ltwh(boxes_ltrb)
+        box_ltwh[:, [0, 2]] *= W
+        box_ltwh[:, [1, 3]] *= H
+        box_ltwh, category, score = [x.cpu() for x in [box_ltwh, categories, scores]]
+        img_id = batch["image_id"][idx].item()
+        for b_ltwh, label_, prob_ in zip(box_ltwh, category, score):
+            results.append([img_id, *b_ltwh.tolist(), prob_.item(), int(label_)])
+    return np.array(results).astype(np.float32)
