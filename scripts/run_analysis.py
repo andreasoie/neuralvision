@@ -37,9 +37,7 @@ def evaluation(cfg, N_images: int, do_sysout: bool = True):
     total_time = time.time() - start_time
 
     _name = cfg["run_name"]
-    print(
-        f" \n {_name} | {N_images / total_time} images/sec | {total_time} runtime (s)"
-    )
+    print(f" \n {_name} | FPS: {N_images / total_time} | {total_time} runtime (s)")
 
 
 @click.command()

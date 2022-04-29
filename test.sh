@@ -15,6 +15,6 @@
 # python test.py --cfg neuralvision/configs/retina_P3.py
 # python test.py --cfg neuralvision/configs/retina_P4.py
 
-python test.py --cfg neuralvision/configs/task25/retina_P4_retrain.py
-# python -m scripts.run_analysis neuralvision/configs/task25/retina_P4_retrain.py
-# python -m scripts.run_benchmark neuralvision/configs/task25/retina_P4_retrain.py
+# python test.py --cfg neuralvision/configs/template/tdt4265.py
+python -m scripts.run_analysis core/configs/task23/retina_P5.py
+python -m scripts.run_benchmark core/configs/task23/retina_P5.py

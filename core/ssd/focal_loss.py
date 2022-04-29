@@ -13,30 +13,35 @@ class FocalLossFunction(nn.Module):
         self.alpha = alphas
 
     def forward(self, input, target):
-        if input.dim()>2:
-            input = input.view(input.size(0),input.size(1),-1)  # N,C,H,W => N,C,H*W
-            input = input.transpose(1,2)                        # N,C,H*W => N,H*W,C
-            input = input.contiguous().view(-1,input.size(2))   # N,H*W,C => N*H*W,C
-        target = target.view(-1,1)
+        if input.dim() > 2:
+            input = input.view(input.size(0), input.size(1), -1)  # N,C,H,W => N,C,H*W
+            input = input.transpose(1, 2)  # N,C,H*W => N,H*W,C
+            input = input.contiguous().view(-1, input.size(2))  # N,H*W,C => N*H*W,C
+        target = target.view(-1, 1)
 
         logpt = F.log_softmax(input, dim=1)
-        logpt = logpt.gather(1,target)
+        logpt = logpt.gather(1, target)
         logpt = logpt.view(-1)
         pt = Variable(logpt.data.exp())
 
-        if self.alpha is not None:
-            if self.alpha.type() != input.data.type():
-                self.alpha = self.alpha.type_as(input.data)
-            at = self.alpha.gather(0, target.data.view(-1))
-            logpt = logpt * Variable(at)
+        if self.alpha.type() != input.data.type():
+            self.alpha = self.alpha.type_as(input.data)
+        at = self.alpha.gather(0, target.data.view(-1))
+        logpt = logpt * Variable(at)
 
-        loss = -1 * (1-pt)**self.gamma * logpt
-       
+        loss = -1 * (1 - pt) ** self.gamma * logpt
+
         return loss.sum()
 
 
 class FocalLoss(nn.Module):
-    def __init__(self, anchors, alphas: List[Union[float, int]], gamma: float = 2.0, reduction: str = "sum"):
+    def __init__(
+        self,
+        anchors,
+        alphas: List[Union[float, int]],
+        gamma: float = 2.0,
+        reduction: str = "sum",
+    ):
         super().__init__()
         self.scale_xy = 1.0 / anchors.scale_xy
         self.scale_wh = 1.0 / anchors.scale_wh
@@ -84,12 +89,12 @@ class FocalLoss(nn.Module):
         # gt_labels: torch.Size([32, 65440]) dtype= torch.int64
 
         # reshape to [batch_size, 4, num_anchors]
-        gt_bbox = gt_bbox.transpose(1, 2).contiguous() # type: ignore
- 
+        gt_bbox = gt_bbox.transpose(1, 2).contiguous()  # type: ignore
+
         classification_loss = self.focal_loss(confs, gt_labels)
 
         pos_mask = (gt_labels > 0).unsqueeze(1).repeat(1, 4, 1)
-        bbox_delta = bbox_delta[pos_mask] # type: ignore
+        bbox_delta = bbox_delta[pos_mask]  # type: ignore
         gt_locations = self._loc_vec(gt_bbox)
         gt_locations = gt_locations[pos_mask]
         regression_loss = F.smooth_l1_loss(bbox_delta, gt_locations, reduction="sum")

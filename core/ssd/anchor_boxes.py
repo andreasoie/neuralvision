@@ -9,6 +9,8 @@ from math import sqrt
 # It's a trick to improve gradients from bounding box regression.
 # Take a look at this post about more info:
 # https://leimao.github.io/blog/Bounding-Box-Encoding-Decoding/
+
+
 class AnchorBoxes(object):
     def __init__(
         self,
@@ -37,6 +39,9 @@ class AnchorBoxes(object):
         self.num_boxes_per_fmap = [2 + 2 * len(ratio) for ratio in aspect_ratios]
         # Calculation method slightly different from paper
 
+        """
+        """
+
         anchors = []
         # size of feature and number of feature
         for fidx, [fH, fW] in enumerate(feature_sizes):
@@ -47,14 +52,18 @@ class AnchorBoxes(object):
             h_max = sqrt(min_sizes[fidx][0] * min_sizes[fidx + 1][0]) / image_shape[0]
             w_max = sqrt(min_sizes[fidx][1] * min_sizes[fidx + 1][1]) / image_shape[1]
             bbox_sizes.append((w_max, h_max))
+            # print("Aspect Pairs: ", aspect_ratios[fidx])
             for r in aspect_ratios[fidx]:
-                h = h_min * sqrt(r)
-                w = w_min / sqrt(r)
+                # h = h_min * sqrt(r)
+                # w = w_min / sqrt(r)
                 bbox_sizes.append((w_min / sqrt(r), h_min * sqrt(r)))
                 bbox_sizes.append((w_min * sqrt(r), h_min / sqrt(r)))
             scale_y = image_shape[0] / strides[fidx][0]
             scale_x = image_shape[1] / strides[fidx][1]
             for w, h in bbox_sizes:
+                # print(
+                #     f"[{fidx}] featureMap [{fH}, {fW}] - size ({round(h*image_shape[0], 2)}, {round(w*image_shape[1], 2)})"
+                # )
                 for i in range(fH):
                     for j in range(fW):
                         cx = (j + 0.5) / scale_x

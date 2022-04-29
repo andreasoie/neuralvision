@@ -86,10 +86,15 @@ def get_category_metrics(category_ids: pd.DataFrame, decimals: float = 2) -> Non
     return label_distribution
 
 
-def remove_outliers(df: pd.DataFrame) -> pd.DataFrame:
+def remove_outliers(
+    df: pd.DataFrame, qrange: List[float, float] = None
+) -> pd.DataFrame:
     for col in df.columns:
         if is_numeric_dtype(df[col]):
-            percentiles = df[col].quantile([0.01, 0.99]).values
+            if qrange is not None:
+                percentiles = df[col].quantile(qrange).values
+            else:
+                percentiles = df[col].quantile([0.01, 0.99]).values
             df[col][df[col] <= percentiles[0]] = percentiles[0]
             df[col][df[col] >= percentiles[1]] = percentiles[1]
         else:
@@ -181,7 +186,9 @@ def _calculate_aspect(width: int, height: int) -> str:
     return f"{x}:{y}"
 
 
-def view_aspect_ratio_distribution(cleaned_annotations: pd.DataFrame) -> None:
+def view_aspect_ratio_distribution(
+    cleaned_annotations: pd.DataFrame, xscale: tuple = None
+) -> None:
     """
     View the distribution of aspect ratios of the bounding boxes.
     """
@@ -217,7 +224,10 @@ def view_aspect_ratio_distribution(cleaned_annotations: pd.DataFrame) -> None:
     )
     plt.xlabel("Aspect Ratio")
     plt.ylabel("Number of boxes")
-    plt.xlim(0, 6)
+    if xscale is not None:
+        plt.xlim(xscale)
+    else:
+        plt.xlim(0, 6)
     plt.legend()
     plt.show()
 

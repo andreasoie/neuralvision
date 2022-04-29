@@ -39,7 +39,6 @@ train.image_channels = 3  # type: ignore
 train.epochs = 50
 train.batch_size = 8
 
-
 anchors.aspect_ratios = [[2, 3], [2, 3], [2, 3], [2, 3], [2, 3], [2, 3]]
 NUM_CLASSES = 8 + 1  # Add 1 for background
 
