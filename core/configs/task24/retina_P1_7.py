@@ -41,66 +41,84 @@ train.imshape = (128, 1024)  # type: ignore
 train.image_channels = 3  # type: ignore
 train.epochs = 50
 train.batch_size = 8
-# anchors.aspect_ratios = [ #
-#     [2.5, 3.5],
-#     [2.5, 3.5],
-#     [2.5, 3.5],
-#     [2.5, 3.5],
-#     [2.5, 3.5],
-#     [2.5, 3.5],
+anchors.aspect_ratios = [[2, 3], [2, 3], [2, 3], [2, 3], [2, 3], [2, 3]]
+
+
+# anchors.aspect_ratios = [  #
+#     [0.5, 1.5],
+#     [0.5, 1.5],
+#     [0.5, 1.5],
+#     [0.5, 1.5],
+#     [0.5, 1.5],
+#     [0.5, 1.5],
 # ]
 
-anchors = L(CustomBoxes)(
-    feature_sizes=[[32, 256], [16, 128], [8, 64], [4, 32], [2, 16], [1, 8]],
-    # Strides is the number of pixels (in image space) between each spatial position in the feature map
-    strides=[[4, 4], [8, 8], [16, 16], [32, 32], [64, 64], [128, 128]],
-    min_sizes=[
-        [16, 16],
-        [32, 32],
-        [48, 48],
-        [64, 64],
-        [86, 86],
-        [128, 128],
-        [128, 400],
-    ],
-    # Strides is the number of pixels (in image space) between each spatial position in the feature map
-    # aspect ratio is defined per feature map (first index is largest feature map (38x38))
-    # aspect ratio is used to define two boxes per element in the list.
-    # if ratio=[2], boxes will be created with ratio 1:2 and 2:1
-    # Number of boxes per location is in total 2 + 2 per aspect ratio
-    #     type	car	person	scooter	bicycle	rider	bus	truck
-    # 0	area	582.27	194.11	278.82	284.76	238.62	494.21	894.82
-    # 1	aspect	22:25	7:26	9:29	13:20	2:7	19:25	24:35
-    # 2	width	22.56	7.42	9.41	13.73	8.51	19.26	24.96
-    # 3	height	25.81	26.16	29.63	20.74	28.04	25.66	35.85
-    # ------------------------------------------------------------------
-    # rider:    0.15 to 0.5
-    # person:   0.15 to 0.45
-    # bicycle:  0.3 to 1
-    # scooter:  0.1 to 0.5
-    # car:      0.5 to 1.5
-    # truck:    0.4 to 1.4 except middle
-    # bus:      0.4 to 1
-    aspect_map={
-        0: [5.0, 3.7037037, 2.56410256, 1.72413793, 1.19047619, 0.76335878],
-        1: [5.0, 3.7037037, 2.56410256, 1.72413793, 1.19047619, 0.76335878],
-        2: [5.0, 3.7037037, 2.56410256, 1.72413793, 1.19047619, 0.76335878],
-        3: [5.0, 3.7037037, 2.56410256, 1.72413793, 1.19047619, 0.76335878],
-        4: [5.0, 3.7037037, 2.56410256, 1.72413793, 1.19047619, 0.76335878],
-        5: [5.0, 3.7037037, 2.56410256, 1.72413793, 1.19047619, 0.76335878],
-    },
-    # aspect_map={
-    #     0: np.divide(1, np.linspace(0.15, 0.5, 6)).round(4).tolist(),
-    #     1: np.divide(1, np.linspace(0.15, 0.45, 6)).round(4).tolist(),
-    #     2: np.divide(1, np.linspace(0.3, 1, 6)).round(4).tolist(),
-    #     3: np.divide(1, np.linspace(0.1, 0.5, 6)).round(4).tolist(),
-    #     4: np.divide(1, np.linspace(0.5, 1.5, 6)).round(4).tolist(),
-    #     5: np.divide(1, np.linspace(0.4, 1, 6)).round(4).tolist(),
-    # },
-    image_shape="${train.imshape}",
-    scale_center_variance=0.1,
-    scale_size_variance=0.2,
-)
+# anchors = L(CustomBoxes)(
+#     feature_sizes=[[32, 256], [16, 128], [8, 64], [4, 32], [2, 16], [1, 8]],
+#     # Strides is the number of pixels (in image space) between each spatial position in the feature map
+#     strides=[[4, 4], [8, 8], [16, 16], [32, 32], [64, 64], [128, 128]],
+#     min_sizes=[
+#         [12, 6],
+#         [32, 16],
+#         [48, 32],
+#         [64, 64],
+#         [96, 96],
+#         [128, 128],
+#         [128, 400],
+#     ],
+#     # Strides is the number of pixels (in image space) between each spatial position in the feature map
+#     # aspect ratio is defined per feature map (first index is largest feature map (38x38))
+#     # aspect ratio is used to define two boxes per element in the list.
+#     # if ratio=[2], boxes will be created with ratio 1:2 and 2:1
+#     # Number of boxes per location is in total 2 + 2 per aspect ratio
+#     #     type	car	person	scooter	bicycle	rider	bus	truck
+#     # 0	area	582.27	194.11	278.82	284.76	238.62	494.21	894.82
+#     # 1	aspect	22:25	7:26	9:29	13:20	2:7	19:25	24:35
+#     # 2	width	22.56	7.42	9.41	13.73	8.51	19.26	24.96
+#     # 3	height	25.81	26.16	29.63	20.74	28.04	25.66	35.85
+#     # ------------------------------------------------------------------
+#     # rider:    0.15 to 0.5
+#     # person:   0.15 to 0.45
+#     # bicycle:  0.3 to 1
+#     # scooter:  0.1 to 0.5
+#     # car:      0.5 to 1.5
+#     # truck:    0.4 to 1.4 except middle
+#     # bus:      0.4 to 1
+#     #          %  to  %
+#     # rider:  25 to 75 | (5.5, 16) to (9.3, 40)
+#     # person: 25 to 75 | (4.3, 13.9) to (8.6, 37.2)
+#     # bicyle: 25 to 75 | (10.6, 16.4) to (16, 24.7)
+#     # car:    25 to 75 | (13.3, 13) to (33, 37)
+#     # truck:  25 to 75 | (15, 21) to (47, 78)
+#     # bus:    25 to 75 | (8.9, 13.5) to (30.1, 35.8)
+#     # aspect_map={
+#     #     0: [5.0, 3.7037037, 2.56410256, 1.72413793, 1.19047619, 0.76335878],
+#     #     1: [5.0, 3.7037037, 2.56410256, 1.72413793, 1.19047619, 0.76335878],
+#     #     2: [5.0, 3.7037037, 2.56410256, 1.72413793, 1.19047619, 0.76335878],
+#     #     3: [5.0, 3.7037037, 2.56410256, 1.72413793, 1.19047619, 0.76335878],
+#     #     4: [5.0, 3.7037037, 2.56410256, 1.72413793, 1.19047619, 0.76335878],
+#     #     5: [5.0, 3.7037037, 2.56410256, 1.72413793, 1.19047619, 0.76335878],
+#     # },
+#     # aspect_map={
+#     #     0: np.linspace(0.15, 0.5, 6).round(4).tolist(),
+#     #     1: np.linspace(0.15, 0.45, 6).round(4).tolist(),
+#     #     2: np.linspace(0.3, 1, 6).round(4).tolist(),
+#     #     3: np.linspace(0.1, 0.5, 6).round(4).tolist(),
+#     #     4: np.linspace(0.5, 1.5, 6).round(4).tolist(),
+#     #     5: np.linspace(0.4, 1, 6).round(4).tolist(),
+#     # },
+#     aspect_map={
+#         0: np.linspace(0.2, 0.8, 6).round(4).tolist(),  # rider
+#         1: np.linspace(0.2, 1.0, 6).round(4).tolist(),  # person
+#         2: np.linspace(0.2, 1.2, 6).round(4).tolist(),  # bicycle
+#         3: np.linspace(0.5, 1.2, 6).round(4).tolist(),  # car
+#         4: np.linspace(0.6, 1.6, 6).round(4).tolist(),  # truck
+#         5: np.linspace(0.6, 2, 6).round(4).tolist(),  # bus
+#     },
+#     image_shape="${train.imshape}",
+#     scale_center_variance=0.1,
+#     scale_size_variance=0.2,
+# )
 
 NUM_CLASSES = 8 + 1  # Add 1 for background
 

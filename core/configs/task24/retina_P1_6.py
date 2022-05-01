@@ -18,6 +18,8 @@ from core.transforms.transform import (
     ToTensor,
 )
 
+from core.ssd.custom_boxes import CustomBoxes
+
 # absolute import causes issues, using relative imports
 from ..template.ssd300 import (
     anchors,
@@ -39,15 +41,33 @@ train.imshape = (128, 1024)  # type: ignore
 train.image_channels = 3  # type: ignore
 train.epochs = 50
 train.batch_size = 8
-anchors.aspect_ratios = [
-    [0.1, 0.1],
-    [0.25, 0.25],
-    [0.5, 0.5],
-    [0.75, 0.75],
-    [1, 1],
-    [1.5, 1.5],
-]
 
+
+anchors = L(CustomBoxes)(
+    feature_sizes=[[32, 256], [16, 128], [8, 64], [4, 32], [2, 16], [1, 8]],
+    # Strides is the number of pixels (in image space) between each spatial position in the feature map
+    strides=[[4, 4], [8, 8], [16, 16], [32, 32], [64, 64], [128, 128]],
+    min_sizes=[
+        [16, 16],
+        [32, 32],
+        [48, 48],
+        [64, 64],
+        [86, 86],
+        [128, 128],
+        [128, 400],
+    ],
+    aspect_map={
+        0: [0.16, 0.20, 0.25, 0.29, 0.34, 0.41],  # person
+        1: [0.15, 0.20, 0.26, 0.32, 0.37, 0.46],  # scooter
+        2: [0.15, 0.20, 0.25, 0.30, 0.37, 0.53],  # rider
+        3: [0.30, 0.41, 0.55, 0.73, 0.92, 1.33],  # bicycle
+        4: [0.41, 0.69, 0.96, 1.39, 2.58, 4.93],  # car
+        5: [0.54, 0.63, 0.71, 0.87, 1.14, 1.73],  # bus
+    },
+    image_shape="${train.imshape}",
+    scale_center_variance=0.1,
+    scale_size_variance=0.2,
+)
 
 backbone = L(ResnetFPN)(
     output_channels=[128, 256, 128, 128, 64, 64],

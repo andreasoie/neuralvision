@@ -41,6 +41,7 @@ class AnchorBoxes(object):
 
         """
         """
+        self.feature_map_boxes = {}
 
         anchors = []
         # size of feature and number of feature
@@ -60,9 +61,10 @@ class AnchorBoxes(object):
                 bbox_sizes.append((w_min * sqrt(r), h_min / sqrt(r)))
             scale_y = image_shape[0] / strides[fidx][0]
             scale_x = image_shape[1] / strides[fidx][1]
+            self.feature_map_boxes[f"{fH}x{fW}"] = bbox_sizes
             for w, h in bbox_sizes:
                 # print(
-                #     f"[{fidx}] featureMap [{fH}, {fW}] - size ({round(h*image_shape[0], 2)}, {round(w*image_shape[1], 2)})"
+                #     f"[{fidx}] featureMap [{fH}, {fW}] - size ({round(w*image_shape[1], 2)}, {round(h*image_shape[0], 2)})"
                 # )
                 for i in range(fH):
                     for j in range(fW):

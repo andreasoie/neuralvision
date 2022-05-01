@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import os
+import sys
 from pathlib import Path
 from typing import Dict, List, Tuple, Union
 
@@ -13,18 +14,15 @@ import torch
 from core.helpers import batch_collate
 from core.tops.config.instantiate import instantiate
 from core.tops.config.lazy import LazyConfig
+from matplotlib.patches import Rectangle
 from omegaconf import OmegaConf
 from omegaconf.dictconfig import DictConfig
 from pandas.api.types import is_numeric_dtype
 from PIL import Image, ImageFont
+from sklearn.cluster import KMeans
 from vizer.draw import draw_boxes
 
 plt.style.use(["science"])  # ieee
-
-# plt.rcParams["text.usetex"] = True
-# sns.set_style("whitegrid")
-# sns.set_context("paper")
-# sns.color_palette("rocket", as_cmap=True)
 
 
 def get_config(config_path: str, batch_size: int = 1):
@@ -95,7 +93,9 @@ def remove_outliers(
                 percentiles = df[col].quantile(qrange).values
             else:
                 percentiles = df[col].quantile([0.01, 0.99]).values
-            df[col][df[col] <= percentiles[0]] = percentiles[0]
+
+            df[col][df[col] <= percentiles[0]] = percentiles[0]  # replace
+
             df[col][df[col] >= percentiles[1]] = percentiles[1]
         else:
             df[col] = df[col]
@@ -511,3 +511,228 @@ def save_sample(
     im = Image.fromarray(im)
     im = im.resize((im.size[0] * 3, im.size[1] * 3), Image.ANTIALIAS)
     im.save(os.path.join(save_dir, f"{img_id}.jpg"))
+
+
+def vizualize_anchors(feature_map_boxes: Dict[list], show_key: str = "32x256"):
+    """receives a list of different boxes for each feature map"""
+    IMAGE_HEIGHT, IMAGE_WIDTH = 128, 1024
+    unscaled_boxes = feature_map_boxes[show_key]
+
+    box_widths, box_heights = [], []
+
+    for w, h in unscaled_boxes:
+        w_scaled, h_scaled = w * IMAGE_WIDTH, h * IMAGE_HEIGHT
+        box_widths.append(w_scaled)
+        box_heights.append(h_scaled)
+
+    assert len(box_widths) == len(box_heights), "boxes must have same length"
+
+    box_resolutions = zip(box_widths, box_heights)
+    N_ANCHORS = len(box_resolutions)
+
+    # Setup Canvas
+    fig = plt.figure(figsize=(18, 4), dpi=600)
+    gs = fig.add_gridspec(1, N_ANCHORS + 1)
+    ax1 = fig.add_subplot(gs[0, 0])
+
+    for i, (width, height) in enumerate(box_resolutions):
+        axTMP = fig.add_subplot(gs[0, i + 1])
+        rect = Rectangle(
+            (0, 0), width, height, fill=False, edgecolor="blue", linewidth=2
+        )
+        axTMP.add_patch(rect)
+        axTMP.set_title(f"({int(width)}, {int(height)})")
+        axTMP.axis("scaled")
+        axTMP.axis("off")
+
+    PADDING = 2
+    X_MAX = max(box_widths)
+    Y_MAX = max(box_heights)
+    Z_MAX = max(X_MAX, Y_MAX) + PADDING
+    CNTR = Z_MAX // 2
+
+    ax1.set_xlim(0, Z_MAX)
+    ax1.set_ylim(0, Z_MAX)
+
+    for width, height in box_resolutions:
+        x_pos, y_pos = width / 2, height / 2
+        rect = Rectangle(
+            (CNTR - x_pos, CNTR - y_pos),
+            width,
+            height,
+            fill=False,
+            edgecolor="blue",
+            linewidth=2,
+        )
+        ax1.add_patch(rect)
+
+    ax1.set_title(f"{show_key}")
+    ax1.axis("scaled")
+
+    plt.show()
+
+
+def vizualize_anchors_clustered(
+    feature_map_boxes: Dict[list], show_keys: List[str], viz_cfg: dict = None
+):
+    """receives a list of different boxes for each feature map"""
+    figure_size = (18, 4)
+    figure_dpi = 600
+    if viz_cfg is not None:
+        # Check if key exists
+        if "figsize" in viz_cfg:
+            figure_size = viz_cfg["figsize"]
+        if "dpi" in viz_cfg:
+            figure_dpi = viz_cfg["dpi"]
+
+    IMAGE_HEIGHT, IMAGE_WIDTH = 128, 1024
+
+    N_FEATURE_MAPS = len(show_keys)
+
+    # Setup Canvas
+    fig = plt.figure(figsize=figure_size, dpi=figure_dpi)
+    gs = fig.add_gridspec(1, N_FEATURE_MAPS)
+
+    for i, show_key in enumerate(show_keys):
+        axTMP = fig.add_subplot(gs[0, i])
+        unscaled_boxes = feature_map_boxes[show_key]
+        box_widths, box_heights = [], []
+
+        for w, h in unscaled_boxes:
+            w_scaled, h_scaled = w * IMAGE_WIDTH, h * IMAGE_HEIGHT
+            box_widths.append(w_scaled)
+            box_heights.append(h_scaled)
+
+        assert len(box_widths) == len(box_heights), "boxes must have same length"
+
+        box_resolutions = zip(box_widths, box_heights)
+
+        PADDING = 2
+        X_MAX = max(box_widths)
+        Y_MAX = max(box_heights)
+        Z_MAX = max(X_MAX, Y_MAX) + PADDING
+        CNTR = Z_MAX // 2
+
+        axTMP.set_xlim(0, Z_MAX)
+        axTMP.set_ylim(0, Z_MAX)
+
+        for width, height in box_resolutions:
+            x_pos, y_pos = width / 2, height / 2
+            rect = Rectangle(
+                (CNTR - x_pos, CNTR - y_pos),
+                width,
+                height,
+                fill=False,
+                edgecolor="blue",
+                linewidth=2,
+            )
+            axTMP.add_patch(rect)
+
+        axTMP.set_title(f"{show_key}")
+        axTMP.axis("scaled")
+
+    plt.show()
+
+
+def load_boxes(_annotations, rescale_width=None, rescale_height=None):
+    """Extracts bounding-box widths and heights from ground-truth dataset.
+
+    Args:
+    path : Path to .xml annotation files for your dataset.
+    rescale_width : Scaling factor to rescale width of bounding box.
+    rescale_height : Scaling factor to rescale height of bounding box.
+
+    Returns:
+    bboxes : A numpy array with pairs of box dimensions as [width, height].
+    """
+    res = []
+
+    for row in _annotations.itertuples():
+        bbox_width = row.width
+        bbox_height = row.height
+        if rescale_width and rescale_height:
+            bbox_width = bbox_width / rescale_width
+            bbox_height = bbox_height / rescale_height
+        if bbox_width <= 0 or bbox_height <= 0:
+            print("Invalid bounding box with width and height <= 0: {}".format(row))
+        res.append([bbox_width, bbox_height])
+    bboxes = np.array(res)
+    return bboxes
+
+
+def calculate_average_iou(bboxes, anchors):
+    intersection_width = np.minimum(anchors[:, [0]], bboxes[:, 0]).T
+    intersection_height = np.minimum(anchors[:, [1]], bboxes[:, 1]).T
+
+    if np.any(intersection_width == 0) or np.any(intersection_height == 0):
+        raise ValueError("Some boxes have zero size.")
+
+    intersection_area = intersection_width * intersection_height
+    boxes_area = np.prod(bboxes, axis=1, keepdims=True)
+    anchors_area = np.prod(anchors, axis=1, keepdims=True).T
+    union_area = boxes_area + anchors_area - intersection_area
+    avg_iou_perc = np.mean(np.max(intersection_area / union_area, axis=1)) * 100
+
+    return avg_iou_perc
+
+
+def _kmeans_aspect_ratios(
+    bboxes: np.ndarray, kmeans_max_iter: int, num_aspect_ratios: int
+) -> np.ndarray:
+    """Calculate the centroid of bounding boxes clusters using Kmeans algorithm."""
+
+    assert len(bboxes), "You must provide bounding boxes"
+
+    normalized_bboxes = bboxes / np.sqrt(bboxes.prod(axis=1, keepdims=True))
+
+    kmeans = KMeans(
+        init="random",
+        n_clusters=num_aspect_ratios,
+        random_state=1337,
+        max_iter=kmeans_max_iter,
+    )
+    kmeans.fit(X=normalized_bboxes)
+    ar = kmeans.cluster_centers_
+
+    assert len(ar), "Unable to find k-means centroid, try increasing kmeans_max_iter."
+
+    avg_iou_perc = calculate_average_iou(normalized_bboxes, ar)
+
+    if not np.isfinite(avg_iou_perc):
+        sys.exit("Failed to get aspect ratios due to numerical errors in k-means")
+
+    aspect_ratios = sorted([w / h for w, h in ar])
+    return aspect_ratios, avg_iou_perc
+
+
+def _get_kmeans_aspect_ratios(
+    _annotations: pd.DataFrame, max_iter: int = 100_00, n_ratios: int = 6
+) -> Tuple[List[float], float]:
+    """returns the aspect ratios for the spesific category in the dataset."""
+    # These should match the training pipeline config ('fixed_shape_resizer' param)
+    IMG_WIDTH, IMG_HEIGHT = 1024, 1028
+    # Get the ground-truth bounding boxes for our dataset
+    bboxes = load_boxes(
+        _annotations, rescale_width=IMG_WIDTH, rescale_height=IMG_HEIGHT
+    )
+    aspect_ratios, avg_iou_perc = _kmeans_aspect_ratios(
+        bboxes=bboxes, kmeans_max_iter=max_iter, num_aspect_ratios=n_ratios
+    )
+    aspect_ratios = sorted(aspect_ratios)
+    return aspect_ratios, avg_iou_perc
+
+
+def kmeans_aspect_ratios_by_categories(
+    baseframe: pd.DataFrame,
+    catagories: List[str],
+    n_clusters: int,
+    max_iter: int = 100_000,
+) -> pd.DataFrame:
+    meta = {}
+    for category in catagories:
+        tmp_anno = baseframe[baseframe["category_id"] == category]
+        aspect_ratios, _ = _get_kmeans_aspect_ratios(
+            tmp_anno, max_iter=max_iter, n_ratios=n_clusters
+        )
+        meta[category] = aspect_ratios
+    return pd.DataFrame(meta).transpose()
