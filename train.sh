@@ -14,3 +14,6 @@
 # rm -rf outputs/configs/task24/retina_P1_4
 # rm -rf outputs/configs/task24/retina_P1_5
 # rm -rf outputs/configs/task24/retina_P1_6
+
+python train.py core/configs/task24/retina_P4_3.py
+python train.py core/configs/task24/retina_P4_4.py

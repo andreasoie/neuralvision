@@ -527,7 +527,7 @@ def vizualize_anchors(feature_map_boxes: Dict[list], show_key: str = "32x256"):
 
     assert len(box_widths) == len(box_heights), "boxes must have same length"
 
-    box_resolutions = zip(box_widths, box_heights)
+    box_resolutions = list(zip(box_widths, box_heights))
     N_ANCHORS = len(box_resolutions)
 
     # Setup Canvas
@@ -635,18 +635,7 @@ def vizualize_anchors_clustered(
 
 
 def load_boxes(_annotations, rescale_width=None, rescale_height=None):
-    """Extracts bounding-box widths and heights from ground-truth dataset.
-
-    Args:
-    path : Path to .xml annotation files for your dataset.
-    rescale_width : Scaling factor to rescale width of bounding box.
-    rescale_height : Scaling factor to rescale height of bounding box.
-
-    Returns:
-    bboxes : A numpy array with pairs of box dimensions as [width, height].
-    """
     res = []
-
     for row in _annotations.itertuples():
         bbox_width = row.width
         bbox_height = row.height

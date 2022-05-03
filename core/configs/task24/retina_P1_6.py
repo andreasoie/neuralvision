@@ -47,14 +47,13 @@ anchors = L(CustomBoxes)(
     feature_sizes=[[32, 256], [16, 128], [8, 64], [4, 32], [2, 16], [1, 8]],
     # Strides is the number of pixels (in image space) between each spatial position in the feature map
     strides=[[4, 4], [8, 8], [16, 16], [32, 32], [64, 64], [128, 128]],
-    min_sizes=[
+    sizes=[
         [16, 16],
         [32, 32],
         [48, 48],
         [64, 64],
         [86, 86],
         [128, 128],
-        [128, 400],
     ],
     aspect_map={
         0: [0.16, 0.20, 0.25, 0.29, 0.34, 0.41],  # person

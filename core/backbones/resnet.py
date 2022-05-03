@@ -23,7 +23,6 @@ class ResNetConfig:
         conv4_block1.conv2.stride = (1, 1)
         conv4_block1.downsample[0].stride = (1, 1)
 
-        # Testing freezing
         for param in layers.parameters():
             param.requires_grad = False
 
@@ -88,8 +87,8 @@ if __name__ == "__main__":
     BS = 4
     image_channels = 3
     imshape = (128, 1024)
-    output_channels = [128, 128, 256, 128, 128, 64, 64]
-    feature_sizes = [[64, 512], [32, 256], [16, 128], [8, 64], [4, 32], [2, 16], [1, 8]]
+    output_channels = [128, 256, 256, 512, 512, 256, 256]
+    feature_sizes = [[32, 256], [16, 128], [8, 64], [4, 32], [2, 16], [1, 8]]
     random_image = torch.randn(BS, image_channels, *imshape)
 
     resnet = ResNet(output_channels, image_channels, feature_sizes)

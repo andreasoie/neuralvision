@@ -32,7 +32,8 @@ from ..template.ssd300 import (
     train,
 )
 
-TDT4265_DATASET_DIR = "datasets/tdt4265"
+# TDT4265_DATASET_DIR = "datasets/tdt4265"
+TDT4265_DATASET_DIR = "datasets/tdt4265_new"
 
 # Keep the model, except change the backbone and number of classes
 train.imshape = (128, 1024)  # type: ignore

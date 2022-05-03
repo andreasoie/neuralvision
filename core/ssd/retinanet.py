@@ -1,9 +1,11 @@
 import math
 from typing import Any, List, Tuple
+
 import torch
 import torch.nn as nn
-from .anchor_encoder import AnchorEncoder
 from torchvision.ops import batched_nms
+
+from .anchor_encoder import AnchorEncoder
 
 
 def apply_weight_init(param, weight_style: str, num_anchors: int, num_classes: int):
@@ -138,39 +140,6 @@ class RetinaNet(nn.Module):
             self.classification_heads = create_singlenet(
                 *cls_channels, reg_head_weight_style, num_boxes, self.num_classes
             )
-
-        """
-        Initialize output heads that are applied
-        to each feature map from the feature_extractor.
-
-        if n_boxes is consistent e.g. 6,6,6,6,.., 
-        and out channels is consistent e.g. 256,256,256,256,..,
-        we can initialize only a single reg and class head
-        if not, we loop and use varying numb_boxes and channels
-        NB: paper uses consistent - we don't ?? """
-        # for num_boxes, out_channel in zip(anchors.num_boxes_per_fmap, self.feature_extractor.out_channels):
-        #     """Create RetinaNet Subnet Heads
-        #     weight_style: regression => initializes regression focal style weights
-        #     weight_style: classification => initializes regression focal style weights
-        #     weight_style: default => initializes default SSD style weights"""
-
-        #     reg_channels: Tuple[int, int] = out_channel, num_boxes * 4
-        #     cls_channels: Tuple[int, int] = out_channel, num_boxes * self.num_classes
-
-        #     reg_head_weight_style = "default"
-        #     cls_head_weight_style = "classification" if self.use_weightstyle else "default"
-
-        #     if self.use_deeper_head:
-        #         reg_net = create_subnet(*reg_channels, head_weight_style = reg_head_weight_style)
-        #         cls_net = create_subnet(*cls_channels, head_weight_style = cls_head_weight_style)
-        #     else:
-        #         reg_net = create_singlenet(*reg_channels, head_weight_style = "default")
-        #         cls_net = create_singlenet(*cls_channels, head_weight_style = "default")
-
-        #     print(f"cls_net: {cls_net}")
-
-        #     self.regression_heads.append(reg_net.to(self.device))
-        #     self.classification_heads.append(cls_net.to(self.device))
 
     def regress_boxes(self, features):
         locations = []
