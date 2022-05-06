@@ -2,9 +2,18 @@ import os
 import pathlib
 import zipfile
 
-# If you create other files, edit this list to include them in the .zip file.
-directories_to_include = ["task2", "SSD"]
+directories_to_include = [
+    ".",
+    "core",
+    "datasets",
+    "install",
+    "outputs",
+    "scripts",
+    "tools",
+]
+
 extensions_to_include = [".py", ".json", ".yaml", ".ipynb"]
+
 zipfile_path = "assignment_code.zip"
 print("-" * 80)
 with zipfile.ZipFile(zipfile_path, "w") as fp:
@@ -13,7 +22,7 @@ with zipfile.ZipFile(zipfile_path, "w") as fp:
             for filename in filenames:
                 filepath = os.path.join(directory, filename)
                 if pathlib.Path(filepath).suffix in extensions_to_include:
-                    fp.write(filepath)
+                    # fp.write(filepath)
                     print("Adding file:", filepath)
 print("-" * 80)
 print("Zipfile saved to: {}".format(zipfile_path))

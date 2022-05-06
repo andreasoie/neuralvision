@@ -2,7 +2,7 @@ from typing import List, Tuple
 
 import torch
 from torch import nn
-from torchvision.models import resnet18, resnet34, resnet50, ResNet
+from torchvision.models import resnet34, ResNet
 
 from core.backbones.utils import OutputChannels, OutputFeatures, TensorTuple
 
@@ -72,13 +72,11 @@ class ResNet(nn.Module):
         self.heads = resnet_cfg.init_custom_heads()
 
     def forward(self, x: torch.Tensor) -> TensorTuple:
-
         x = self.tail(x)
         features = [x]
         for head in self.heads:
             x = head(x)
             features.append(x)
-
         return tuple(features)
 
 
@@ -87,7 +85,7 @@ if __name__ == "__main__":
     BS = 4
     image_channels = 3
     imshape = (128, 1024)
-    output_channels = [128, 256, 256, 512, 512, 256, 256]
+    output_channels = [256, 512, 512, 1024, 1024, 256]
     feature_sizes = [[32, 256], [16, 128], [8, 64], [4, 32], [2, 16], [1, 8]]
     random_image = torch.randn(BS, image_channels, *imshape)
 
