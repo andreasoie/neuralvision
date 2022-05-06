@@ -143,6 +143,7 @@ datasets/mnist_object_detection/val/images/
 
 datasets/original_mnist/
 datasets/VOCdevkit/*
+datasets/tdt4265/videos/
 
 datasets/tdt4265_new
  
@@ -153,12 +154,3 @@ outputs/configs/template*
 *.pkl
 *.patch
 *.xml
-datasets/tdt4265/videos/
-
-saved_images/performance_assessment/configs_tdt4265/val/
-
-saved_images/train/
-
-saved_images/val/
-
-inspect/
