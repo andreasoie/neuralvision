@@ -146,11 +146,8 @@ datasets/VOCdevkit/*
 
 datasets/tdt4265_new
  
-neuralvision/outputs/ssd300/logs/
-outputs/
-outputs/configs/*
-outputs/configs/ssd300/logs/tensorboard/
-outputs/configs/ssd300/logs/
+outputs/configs/task*
+outputs/configs/template*
 
 *.gz
 *.pkl
