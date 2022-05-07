@@ -2,7 +2,7 @@
 
 ---
 
-In my final project of [TDT4265](https://www.ntnu.edu/studies/courses/TDT4265#tab=omEmnet), my goal is to detect objects in traffic from LIDAR images collected around the NTNU campus.
+In my final project of [TDT4265](https://www.ntnu.edu/studies/courses/TDT4265#tab=omEmnet), the goal is to detect objects in traffic from LIDAR images collected around the NTNU campus.
 
 > This image is an example of how the dataset looks like.  
 > The image is a three-channel image from a 360&deg; 128-channel LIDAR.
@@ -13,9 +13,9 @@ In my final project of [TDT4265](https://www.ntnu.edu/studies/courses/TDT4265#ta
 
 ## :recycle: Development Cycle
 
-- Dataset exploration and annotation
-- Model development
-- Model evaluation
+- Dataset Exploration
+- Model Development
+- Model Evaluation
 - ”Going Beyond”
 
 ### :clipboard: Tasks
