@@ -19,10 +19,10 @@ In my final project of [TDT4265](https://www.ntnu.edu/studies/courses/TDT4265#ta
 - ”Going Beyond”
 
 ### :clipboard: Tasks
-See ![Wiki](https://github.com/andreasoie/neuralvision/wiki/Tasks) for more information.
+See [Wiki](https://github.com/andreasoie/neuralvision/wiki/Tasks) for more information.
 
 ### :mailbox: Deliverables
 
-- ![Report](docs/final_project.pdf)
-- ![Video](https://youtu.be/9rOMoMoi5zs)
-- Code
+- [Report](docs/final_project.pdf)
+- [Video](https://youtu.be/9rOMoMoi5zs)
+- [Code](https://github.com/andreasoie/neuralvision/)
