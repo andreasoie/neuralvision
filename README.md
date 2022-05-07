@@ -23,6 +23,6 @@ See ![Wiki](https://github.com/andreasoie/neuralvision/wiki/Tasks) for more info
 
 ### :mailbox: Deliverables
 
-- Report
-- Video
+- ![Report](docs/final_project.pdf)
+- ![Video](https://youtu.be/9rOMoMoi5zs)
 - Code
