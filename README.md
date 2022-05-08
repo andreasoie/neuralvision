@@ -2,7 +2,7 @@
 
 ---
 
-In my final project of [TDT4265](https://www.ntnu.edu/studies/courses/TDT4265#tab=omEmnet), the goal is to detect objects in traffic from LIDAR images collected around the NTNU campus.
+In the final project of [TDT4265](https://www.ntnu.edu/studies/courses/TDT4265#tab=omEmnet), the goal is to detect objects in traffic from LIDAR images collected around the NTNU campus.
 
 > This image is an example of how the dataset looks like.  
 > The image is a three-channel image from a 360&deg; 128-channel LIDAR.
